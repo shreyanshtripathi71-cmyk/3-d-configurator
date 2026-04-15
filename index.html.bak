@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Window Configurator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{font-size:15px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;color:#222;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.top-bar{background:#111;color:#ccc;font-size:11px;text-align:center;padding:8px 0;letter-spacing:.5px}
+.top-bar span{color:#4a9eff;font-weight:600}
+.navbar{background:#fff;border-bottom:1px solid #e5e5e5;padding:0 40px;display:flex;align-items:center;height:60px;position:sticky;top:0;z-index:1000;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.navbar-brand{font-size:22px;font-weight:800;color:#111;text-decoration:none;letter-spacing:-1px;display:flex;align-items:center;gap:8px}
+.navbar-brand .icon{font-size:26px}
+.navbar-nav{display:flex;gap:32px;margin-left:auto;list-style:none}
+.navbar-nav a{color:#555;text-decoration:none;font-size:13px;font-weight:500;transition:color .15s}
+.navbar-nav a:hover{color:#111}
+.navbar-nav a.active{color:#111;font-weight:600}
+.breadcrumb{padding:14px 40px;font-size:12px;color:#888;background:#fafafa;border-bottom:1px solid #eee}
+.breadcrumb a{color:#4a9eff;text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+.breadcrumb .sep{margin:0 6px;color:#ccc}
+.product-page{max-width:1280px;margin:0 auto;padding:30px 40px 60px;display:grid;grid-template-columns:1fr 1fr;gap:50px;align-items:start}
+.viewer-section{position:sticky;top:90px}
+.viewer-container{background:#fff;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;position:relative;box-shadow:0 2px 20px rgba(0,0,0,.04)}
+.viewer-canvas-wrap{width:100%;aspect-ratio:1/1;position:relative;background:#f9f9f9;cursor:grab}
+.viewer-canvas-wrap:active{cursor:grabbing}
+#canvas3d{width:100%;height:100%;display:block}
+.fullscreen-btn{position:absolute;top:12px;right:12px;width:36px;height:36px;background:rgba(255,255,255,.9);border:1px solid #ddd;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;z-index:5}
+.fullscreen-btn:hover{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.fullscreen-btn svg{width:16px;height:16px;stroke:#555;fill:none;stroke-width:2}
+.loading-overlay{position:absolute;inset:0;background:rgba(249,249,249,.95);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;transition:opacity .4s}
+.loading-overlay.hidden{opacity:0;pointer-events:none}
+.loader{width:36px;height:36px;border:3px solid #e5e5e5;border-top-color:#333;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:12px;font-size:12px;color:#999;font-weight:500}
+.disclaimer{text-align:center;font-size:10px;color:#aaa;padding:8px 0;font-style:italic}
+.colour-selector-wrap{padding:16px 20px;border-top:1px solid #eee}
+.colour-dropdown-container{position:relative}
+.colour-dropdown-btn{width:100%;padding:12px 16px;background:#fff;border:2px solid #ddd;border-radius:8px;font-size:14px;font-weight:500;color:#222;cursor:pointer;display:flex;align-items:center;gap:12px;transition:border-color .15s;font-family:'Inter',sans-serif}
+.colour-dropdown-btn:hover{border-color:#bbb}
+.colour-dropdown-btn:focus{border-color:#4a9eff;outline:none}
+.colour-dropdown-btn .swatch-preview{width:24px;height:24px;border-radius:6px;border:1px solid #ddd;flex-shrink:0}
+.colour-dropdown-btn .chevron{margin-left:auto;width:18px;height:18px;transition:transform .2s;color:#999}
+.colour-dropdown-btn.open .chevron{transform:rotate(180deg)}
+.colour-dropdown-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.15);max-height:320px;overflow-y:auto;z-index:100;display:none}
+.colour-dropdown-list.open{display:block}
+.colour-dropdown-list::-webkit-scrollbar{width:6px}
+.colour-dropdown-list::-webkit-scrollbar-track{background:transparent}
+.colour-dropdown-list::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+.colour-search-input{width:100%;padding:10px 14px;border:none;border-bottom:1px solid #eee;font-size:13px;color:#222;outline:none;font-family:'Inter',sans-serif;position:sticky;top:0;background:#fff;z-index:1}
+.colour-search-input::placeholder{color:#bbb}
+.colour-option{padding:10px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .1s;font-size:13px;color:#333}
+.colour-option:hover{background:#f5f5f5}
+.colour-option.selected{background:#e8f0fe;font-weight:600;color:#111}
+.colour-option .opt-swatch{width:20px;height:20px;border-radius:5px;border:1px solid #ddd;flex-shrink:0}
+.colour-option .checkmark{margin-left:auto;color:#4a9eff;font-size:16px;display:none}
+.colour-option.selected .checkmark{display:block}
+.controls-bar{padding:14px 20px 18px;display:flex;align-items:center;justify-content:center;gap:10px;border-top:1px solid #eee}
+.ctrl-group{display:flex;align-items:center;gap:2px}
+.ctrl-btn{width:38px;height:38px;background:#fff;border:1.5px solid #ddd;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;color:#555}
+.ctrl-btn:hover{background:#f5f5f5;border-color:#bbb;color:#222}
+.ctrl-btn:active{background:#eee;transform:scale(.95)}
+.ctrl-btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ctrl-divider{width:1px;height:24px;background:#e0e0e0;margin:0 6px}
+.direction-pad{display:grid;grid-template-columns:38px 38px 38px;grid-template-rows:38px 38px 38px;gap:2px}
+.direction-pad .ctrl-btn:nth-child(1){grid-column:2;grid-row:1}
+.direction-pad .ctrl-btn:nth-child(2){grid-column:1;grid-row:2}
+.direction-pad .ctrl-btn:nth-child(3){grid-column:3;grid-row:2}
+.direction-pad .ctrl-btn:nth-child(4){grid-column:2;grid-row:3}
+.product-info{padding-top:10px}
+.product-title{font-size:32px;font-weight:800;color:#111;letter-spacing:-.5px;margin-bottom:8px}
+.product-manufacturer{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:2px;color:#999;margin-bottom:16px}
+.stars{display:flex;gap:3px;margin-bottom:20px}
+.stars svg{width:20px;height:20px;fill:#222}
+.price-line{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#222;margin-bottom:24px}
+.price-amount{font-size:24px;font-weight:800;color:#111;display:block;margin-top:4px}
+.action-buttons{display:flex;gap:12px;margin-bottom:36px}
+.btn{flex:1;padding:15px 20px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;text-decoration:none;display:flex;align-items:center;justify-content:center;border:none;font-family:'Inter',sans-serif}
+.btn-primary{background:#111;color:#fff}
+.btn-primary:hover{background:#333}
+.btn-secondary{background:#4a8c9e;color:#fff}
+.btn-secondary:hover{background:#3a7c8e}
+.window-type-section{margin-bottom:32px}
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:#999;margin-bottom:14px}
+.window-type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wt-btn{background:#fff;border:2px solid #e5e5e5;border-radius:10px;padding:16px 8px 12px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:'Inter',sans-serif}
+.wt-btn:hover{border-color:#ccc;background:#fafafa}
+.wt-btn.active{border-color:#222;background:#fafafa;box-shadow:0 0 0 1px #222}
+.wt-btn .wt-icon{font-size:28px;line-height:1}
+.wt-btn .wt-label{font-size:10px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.5px;text-align:center}
+.wt-btn.active .wt-label{color:#111}
+.description-section{margin-bottom:32px}
+.tab-buttons{display:flex;gap:0;margin-bottom:0;border-bottom:2px solid #eee}
+.tab-btn{padding:12px 20px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#999;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;font-family:'Inter',sans-serif}
+.tab-btn:hover{color:#555}
+.tab-btn.active{color:#111;border-bottom-color:#111}
+.tab-content{padding:20px 0;font-size:13.5px;line-height:1.7;color:#555;display:none}
+.tab-content.active{display:block}
+.tab-content ul{padding-left:20px}
+.tab-content li{margin-bottom:4px}
+.features-section{margin-top:40px}
+.features-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px}
+.feature-card{background:#fff;border:1px solid #eee;border-radius:10px;padding:20px 14px;text-align:center;transition:all .15s}
+.feature-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.06);border-color:#ddd}
+.feature-card .feat-icon{font-size:28px;margin-bottom:8px}
+.feature-card .feat-label{font-size:11px;font-weight:600;color:#555}
+.footer{background:#111;color:#888;padding:40px;text-align:center;font-size:12px}
+.viewer-container.fullscreen{position:fixed;inset:0;z-index:9999;border-radius:0;border:none;display:flex;flex-direction:column}
+.viewer-container.fullscreen .viewer-canvas-wrap{flex:1;aspect-ratio:unset}
+@media(max-width:960px){
+.product-page{grid-template-columns:1fr;gap:30px;padding:20px}
+.viewer-section{position:static}
+.navbar{padding:0 20px}
+.breadcrumb{padding:10px 20px}
+.navbar-nav{display:none}
+}
+</style>
+</head>
+<body>
+<div class="top-bar">&#x1fa9f; <span>3D Window Configurator</span> &#8212; Explore our complete window collection in interactive 3D</div>
+<nav class="navbar">
+<a href="#" class="navbar-brand"><span class="icon">&#x1fa9f;</span>WindowCraft</a>
+<ul class="navbar-nav">
+<li><a href="#" class="active">Windows</a></li>
+<li><a href="#">Patio Doors</a></li>
+<li><a href="#">Features</a></li>
+<li><a href="#">Colours</a></li>
+<li><a href="#">Contact</a></li>
+</ul>
+</nav>
+<div class="breadcrumb">
+<a href="#">Products</a><span class="sep">&raquo;</span>
+<a href="#">Vinyl Windows</a><span class="sep">&raquo;</span>
+<span id="breadcrumbCurrent">Casement Windows</span>
+</div>
+<div class="product-page">
+<div class="viewer-section">
+<div class="viewer-container" id="viewerContainer">
+<div class="viewer-canvas-wrap">
+<canvas id="canvas3d"></canvas>
+<button class="fullscreen-btn" id="fullscreenBtn" title="Toggle fullscreen">
+<svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+</button>
+<div class="loading-overlay" id="loadingOverlay">
+<div class="loader"></div>
+<div class="loading-text" id="loadingText">Loading model...</div>
+</div>
+</div>
+<p class="disclaimer">* Image is for display purposes only.</p>
+<div class="colour-selector-wrap">
+<div class="colour-dropdown-container" id="colourDropdownContainer">
+<button class="colour-dropdown-btn" id="colourDropdownBtn" type="button">
+<span class="swatch-preview" id="btnSwatchPreview" style="background:#ccc"></span>
+<span id="btnColourName">Select Colour</span>
+<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+</button>
+<div class="colour-dropdown-list" id="colourDropdownList">
+<input type="text" class="colour-search-input" id="colourSearchInput" placeholder="Search colours...">
+<div id="colourOptionsContainer"></div>
+</div>
+</div>
+</div>
+<div class="controls-bar">
+<div class="ctrl-group">
+<button class="ctrl-btn" id="zoomInBtn" title="Zoom In"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+<button class="ctrl-btn" id="zoomOutBtn" title="Zoom Out"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg></button>
+</div>
+<div class="ctrl-divider"></div>
+<div class="direction-pad">
+<button class="ctrl-btn" id="rotUpBtn" title="Rotate Up"><svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></button>
+<button class="ctrl-btn" id="rotLeftBtn" title="Rotate Left"><svg viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg></button>
+<button class="ctrl-btn" id="rotRightBtn" title="Rotate Right"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg></button>
+<button class="ctrl-btn" id="rotDownBtn" title="Rotate Down"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M19 12l-7 7-7-7"/></svg></button>
+</div>
+<div class="ctrl-divider"></div>
+<div class="ctrl-group">
+<button class="ctrl-btn" id="isoBtn" title="Isometric View"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></button>
+<button class="ctrl-btn" id="resetBtn" title="Reset View"><svg viewBox="0 0 24 24"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button>
+</div>
+</div>
+</div>
+</div>
+<div class="product-info">
+<h1 class="product-title" id="productTitle">Casement Windows</h1>
+<div class="product-manufacturer">WINDOW CONFIGURATOR</div>
+<div class="stars">
+<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+<svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+</div>
+<div class="price-line">STARTING FROM<span class="price-amount" id="priceAmount">$434.43</span></div>
+<div class="action-buttons">
+<button class="btn btn-primary">Get an instant quote</button>
+<button class="btn btn-secondary">Browse in-stock inventory</button>
+</div>
+<div class="window-type-section">
+<div class="section-label">Select Window Type</div>
+<div class="window-type-grid" id="windowTypeGrid"></div>
+</div>
+<div class="description-section">
+<div class="tab-buttons">
+<button class="tab-btn active" data-tab="desc">Description</button>
+<button class="tab-btn" data-tab="specs">Specifications</button>
+<button class="tab-btn" data-tab="controls">3D Controls</button>
+</div>
+<div class="tab-content active" data-tab="desc" id="tabDesc">
+<p id="descText">Experience our premium vinyl windows with industry-leading efficiency and contemporary design. Each window features multi-chamber frame design, compression seals, and precision mitered fusion-welded corners for superior performance.</p>
+</div>
+<div class="tab-content" data-tab="specs">
+<ul>
+<li>Multiple glazing options - 7/8" Double pane and 1 3/8" Triple-pane glass</li>
+<li>Warm-edge spacer technology</li>
+<li>Foam-injected frame and sash option</li>
+<li>Canadian made premium UPVC vinyl</li>
+<li>3 1/4" Window Depth</li>
+<li>Triple weather seals</li>
+<li>Multi-Point lock</li>
+<li>Premium hardware with elegant folding handle</li>
+<li>Precision mitered, fusion-welded corners</li>
+<li>Hidden drainage</li>
+<li>Wide variety of standard and custom colours</li>
+</ul>
+</div>
+<div class="tab-content" data-tab="controls">
+<p><strong>Mouse Controls:</strong></p>
+<ul>
+<li><strong>Left-click + Drag</strong> - Rotate the 3D model</li>
+<li><strong>Right-click + Drag</strong> - Pan the view</li>
+<li><strong>Scroll wheel</strong> - Zoom in / out</li>
+<li><strong>Arrow buttons</strong> - Rotate in specific direction</li>
+<li><strong>Zoom buttons</strong> - Fine zoom control</li>
+<li><strong>Isometric button</strong> - 3D perspective view</li>
+<li><strong>Reset button</strong> - Return to default view</li>
+</ul>
+<p style="margin-top:12px"><strong>Touch Controls:</strong></p>
+<ul>
+<li><strong>One finger drag</strong> - Rotate</li>
+<li><strong>Two finger drag</strong> - Pan</li>
+<li><strong>Pinch</strong> - Zoom</li>
+</ul>
+</div>
+</div>
+<div class="features-section">
+<div class="section-label">Features</div>
+<div class="features-grid">
+<div class="feature-card"><div class="feat-icon">&#x1f532;</div><div class="feat-label">Glazing Options</div></div>
+<div class="feature-card"><div class="feat-icon">&#x1f9ca;</div><div class="feat-label">Foam Injected</div></div>
+<div class="feature-card"><div class="feat-icon">&#x1f3a8;</div><div class="feat-label">Colour Options</div></div>
+<div class="feature-card"><div class="feat-icon">&#x1f6e1;&#xfe0f;</div><div class="feat-label">Triple Seals</div></div>
+<div class="feature-card"><div class="feat-icon">&#x1f512;</div><div class="feat-label">Multi-Point Lock</div></div>
+<div class="feature-card"><div class="feat-icon">&#x1fa9f;</div><div class="feat-label">FlexScreen</div></div>
+</div>
+</div>
+</div>
+</div>
+<div class="footer">&copy; 2026 3D Window Configurator. For demonstration purposes only.</div>
+
+<script type="importmap">
+{
+"imports": {
+"three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+}
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+let needsRender = true;
+let dampingFrames = 0;
+function requestRender() { needsRender = true; }
+function startDamping(n) { dampingFrames = Math.max(dampingFrames, n || 60); requestRender(); }
+
+const WINDOW_TYPES = [
+  { id:'casement', label:'Casement', icon:'\u{1FA9F}', path:'windows/casement/CasementWindow.gltf', price:'$434.43' },
+  { id:'awning', label:'Awning', icon:'\u{1F3E0}', path:'windows/awning/AwningWindow.gltf', price:'$447.82' },
+  { id:'picture', label:'Picture', icon:'\u{1F5BC}\uFE0F', path:'windows/picture/PictureWindow_Model_1.gltf', price:'$183.31' },
+  { id:'single-hung', label:'Single Hung', icon:'\u2B06\uFE0F', path:'windows/single-hung/SingleHungWindow_optimized.glb', price:'$380.34' },
+  { id:'double-hung', label:'Double Hung', icon:'\u2195\uFE0F', path:'windows/double-hung/DoubleHungWindow_optimized.glb', price:'$399.99' },
+  { id:'single-slider', label:'Single Slider', icon:'\u27A1\uFE0F', path:'windows/single-slider/SingleSliderWindow_optimized.glb', price:'$362.50' },
+  { id:'double-slider', label:'Double Slider', icon:'\u2194\uFE0F', path:'windows/double-slider/DoubleSliderWindow_optimized.glb', price:'$395.00' },
+  { id:'end-vent', label:'End Vent', icon:'\u{1F32C}\uFE0F', path:'windows/end-vent/End Vent Slider Window_Model_1_optimized.glb', price:'$450.00' },
+  { id:'high-fix', label:'High Fix', icon:'\u{1F532}', path:'windows/high-fix/HighFixWindow_DoubleGlazing.gltf', price:'$307.54' },
+];
+
+const COLOURS = [
+  { name:'Almond', hex:'#EFDECD' },
+  { name:'Alu Copper', hex:'#8E4A30' },
+  { name:'Amber', hex:'#FFBF00' },
+  { name:'Antique Brown', hex:'#6B4226' },
+  { name:'Antique Ivory', hex:'#F2E5BC' },
+  { name:'Barn Brown', hex:'#5C3317' },
+  { name:'Benjamin Moore - Kendall Charcoal', hex:'#4D4D48' },
+  { name:'Benjamin Moore Iron Gate', hex:'#3E3D3C' },
+  { name:'Benjamin Moore Rainstorm CSP-50', hex:'#3A5563' },
+  { name:'Black', hex:'#1A1A1A' },
+  { name:'Black Metalic', hex:'#28282B' },
+  { name:'Brass', hex:'#B5A642' },
+  { name:'Bright Red', hex:'#C72C2C' },
+  { name:'Bright Yellow', hex:'#FFD700' },
+  { name:'Brownstone', hex:'#6A4B3A' },
+  { name:'Burgundy', hex:'#800020' },
+  { name:'Canyon Clay', hex:'#8E4E30' },
+  { name:'Cashmere', hex:'#D1B399' },
+  { name:'Chesapeake Gray', hex:'#8E9191' },
+  { name:'Chestnut Brown', hex:'#6F4E37' },
+  { name:'Clay', hex:'#B66A50' },
+  { name:'Clay Beige OC-11', hex:'#C5B9A8' },
+  { name:'Cliffside XL', hex:'#7A7C78' },
+  { name:'Coastal Blue', hex:'#3B6E8F' },
+  { name:'Commercial Brown', hex:'#4A3728' },
+  { name:'Cream', hex:'#FFFDD0' },
+  { name:'Cream LG', hex:'#F5F0DC' },
+  { name:'Custom', hex:'#CCCCCC' },
+  { name:'Dark Drift', hex:'#3B2F2F' },
+  { name:'Dover Gray', hex:'#8C8C8C' },
+  { name:'Espresso', hex:'#3C1E0E' },
+  { name:'Forest Green', hex:'#228B22' },
+  { name:'Graphite', hex:'#4B4E53' },
+  { name:'Gunstock Stain', hex:'#7B5B3A' },
+  { name:'Harvest Wheat', hex:'#D4A960' },
+  { name:'Iron Ore', hex:'#48443E' },
+  { name:'Ivy Green', hex:'#3D5B3E' },
+  { name:'Juniper Grove', hex:'#3A5F44' },
+  { name:'Kaycan Champagne', hex:'#E8D8B8' },
+  { name:'Kaycan Khaki', hex:'#B3A17D' },
+  { name:'Kaycan MatchCoat Beige', hex:'#C8B08C' },
+  { name:'Khaki XL', hex:'#A89F8E' },
+  { name:'Lambeth Beige', hex:'#C1A882' },
+  { name:'Maize', hex:'#FBEC5D' },
+  { name:'Marine Dusk', hex:'#3C4F5C' },
+  { name:'Midnight Surf', hex:'#2C3E50' },
+  { name:'Monterey Sand', hex:'#B5A68E' },
+  { name:'Moonlit Moss', hex:'#5F6B54' },
+  { name:'Mountain Arbor', hex:'#4A5D4A' },
+  { name:'Nutmeg Brown', hex:'#7E5835' },
+  { name:'Old World Blue', hex:'#435B79' },
+  { name:'Para Paint Grey Owl', hex:'#B3B3A8' },
+  { name:'Pearl', hex:'#EAEAE8' },
+  { name:'Pebble', hex:'#B8AFA0' },
+  { name:'Pewter', hex:'#8E8E85' },
+  { name:'River Rock', hex:'#827F75' },
+  { name:'Rockport Brown', hex:'#5C4033' },
+  { name:'Rockwell Blue', hex:'#456789' },
+  { name:'Rustic Granite', hex:'#8A7E72' },
+  { name:'Sable', hex:'#4B3D2A' },
+  { name:'Saddle Brown', hex:'#8B4513' },
+  { name:'Sage', hex:'#B2AC88' },
+  { name:'Sandalwood', hex:'#C2B280' },
+  { name:'Sandlewood', hex:'#DAC5A0' },
+  { name:'Sandstone', hex:'#C9B89C' },
+  { name:'Slate', hex:'#708090' },
+  { name:'Smoked Timber', hex:'#5A4A3C' },
+  { name:'Stone Gray', hex:'#928E85' },
+  { name:'Storm', hex:'#5F6062' },
+  { name:'Tan', hex:'#D2B48C' },
+  { name:'Venetian Red', hex:'#A42A2A' },
+  { name:'Walnut XL', hex:'#5B3A29' },
+  { name:'Wedgewood Blue', hex:'#5B87A0' },
+  { name:'White', hex:'#F0F0F0' },
+  { name:'Wicker', hex:'#C4A76C' },
+  { name:'Window Bronze', hex:'#6E5040' },
+  { name:'Windswept Smoke', hex:'#6E6E6C' },
+];
+
+let currentTypeId = 'casement';
+let currentColour = COLOURS.find(c => c.name === 'White');
+let currentModel = null;
+let frameMaterials = [];
+let isFullscreen = false;
+
+const canvas = document.getElementById('canvas3d');
+const renderer = new THREE.WebGLRenderer({
+  canvas, antialias: true, powerPreference: 'high-performance', stencil: false, alpha: false
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.5;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.VSMShadowMap;
+renderer.shadowMap.autoUpdate = false;
+
+// Heavy model detection — models above this bin size get reduced quality
+const HEAVY_THRESHOLD_MB = 50;
+const HEAVY_MODELS = new Set(['single-hung','double-hung','single-slider','double-slider','end-vent']);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf9f9f9);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 50);
+camera.position.set(0, 0.3, 4);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.12;
+controls.enablePan = true;
+controls.panSpeed = 0.6;
+controls.rotateSpeed = 0.7;
+controls.zoomSpeed = 1.2;
+controls.minDistance = 0.8;
+controls.maxDistance = 12;
+controls.target.set(0, 0, 0);
+controls.addEventListener('change', requestRender);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+const hemiLight = new THREE.HemisphereLight(0xf0f0ff, 0xb0b0a8, 0.6);
+hemiLight.position.set(0, 10, 0);
+scene.add(hemiLight);
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+keyLight.position.set(4, 8, 6);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(512, 512);
+keyLight.shadow.camera.near = 0.5;
+keyLight.shadow.camera.far = 20;
+keyLight.shadow.camera.left = -4;
+keyLight.shadow.camera.right = 4;
+keyLight.shadow.camera.top = 4;
+keyLight.shadow.camera.bottom = -4;
+keyLight.shadow.bias = -0.0004;
+keyLight.shadow.normalBias = 0.02;
+keyLight.shadow.radius = 4;
+scene.add(keyLight);
+
+const fillLight = new THREE.DirectionalLight(0xe8eeff, 0.7);
+fillLight.position.set(-5, 3, -3);
+scene.add(fillLight);
+const rimLight = new THREE.DirectionalLight(0xffeedd, 0.5);
+rimLight.position.set(0, 2, -6);
+scene.add(rimLight);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(30, 30),
+  new THREE.ShadowMaterial({ opacity: 0.06 })
+);
+ground.rotation.x = -Math.PI / 2;
+ground.position.y = -1.8;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const pmrem = new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+(function buildEnvMap() {
+  const envScene = new THREE.Scene();
+  const skyGeo = new THREE.SphereGeometry(50, 32, 16);
+  const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: {
+      topColor: { value: new THREE.Color(0xe0e5ea) },
+      bottomColor: { value: new THREE.Color(0xffffff) },
+      offset: { value: 10 },
+      exponent: { value: 0.4 }
+    },
+    vertexShader: `varying vec3 vWorldPosition;
+    void main() {
+      vec4 wp = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = wp.xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }`,
+    fragmentShader: `uniform vec3 topColor;
+    uniform vec3 bottomColor;
+    uniform float offset;
+    uniform float exponent;
+    varying vec3 vWorldPosition;
+    void main() {
+      float h = normalize(vWorldPosition + offset).y;
+      gl_FragColor = vec4(mix(bottomColor, topColor, max(pow(max(h, 0.0), exponent), 0.0)), 1.0);
+    }`
+  });
+  envScene.add(new THREE.Mesh(skyGeo, skyMat));
+  const panelGeo = new THREE.PlaneGeometry(10, 10);
+  const bright = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  const dim = new THREE.MeshBasicMaterial({ color: 0xd0d0d0, side: THREE.DoubleSide });
+  const topP = new THREE.Mesh(panelGeo, bright);
+  topP.position.set(0, 20, 0);
+  topP.rotation.x = Math.PI / 2;
+  envScene.add(topP);
+  const sideP = new THREE.Mesh(panelGeo, dim);
+  sideP.position.set(15, 5, 5);
+  sideP.lookAt(0, 0, 0);
+  envScene.add(sideP);
+  const backP = new THREE.Mesh(panelGeo, dim);
+  backP.position.set(0, 5, -15);
+  backP.lookAt(0, 0, 0);
+  envScene.add(backP);
+  scene.environment = pmrem.fromScene(envScene, 0.04).texture;
+  skyGeo.dispose(); skyMat.dispose(); panelGeo.dispose(); bright.dispose(); dim.dispose();
+})();
+
+const gltfLoader = new GLTFLoader();
+try {
+  const draco = new DRACOLoader();
+  draco.setDecoderPath('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/libs/draco/gltf/');
+  draco.setDecoderConfig({ type: 'js' });
+  gltfLoader.setDRACOLoader(draco);
+} catch (e) {}
+
+const cache = {};
+
+function disposeModel(model) {
+  if (!model) return;
+  model.traverse(child => {
+    if (child.isMesh) {
+      child.geometry.dispose();
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      mats.forEach(m => { m.dispose(); if (m.map) m.map.dispose(); });
+    }
+  });
+}
+
+function loadModel(typeId) {
+  const type = WINDOW_TYPES.find(w => w.id === typeId);
+  if (!type) return;
+  if (typeId === currentTypeId && currentModel) return;
+  currentTypeId = typeId;
+  const overlay = document.getElementById('loadingOverlay');
+  const loadText = document.getElementById('loadingText');
+  overlay.classList.remove('hidden');
+  const isHeavy = HEAVY_MODELS.has(typeId);
+  loadText.textContent = 'Loading ' + type.label + '...';
+  if (currentModel) { scene.remove(currentModel); disposeModel(currentModel); currentModel = null; }
+  frameMaterials = [];
+  if (cache[typeId]) {
+    placeModel(cloneModel(cache[typeId]), type);
+    overlay.classList.add('hidden');
+    return;
+  }
+  gltfLoader.load(type.path,
+    (gltf) => {
+      cache[typeId] = gltf.scene;
+      placeModel(cloneModel(gltf.scene), type);
+      overlay.classList.add('hidden');
+    },
+    (xhr) => { if (xhr.total) loadText.textContent = 'Loading ' + type.label + '... ' + Math.round(xhr.loaded/xhr.total*100) + '%'; },
+    (err) => { console.error(err); loadText.textContent = 'Error loading model'; setTimeout(() => overlay.classList.add('hidden'), 2000); }
+  );
+}
+
+function cloneModel(src) {
+  const clone = src.clone(true);
+  clone.traverse(c => {
+    if (!c.isMesh) return;
+    c.material = Array.isArray(c.material) ? c.material.map(m => m.clone()) : c.material.clone();
+  });
+  return clone;
+}
+
+function placeModel(model, type) {
+  const isHeavy = HEAVY_MODELS.has(type.id);
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const scale = 2.8 / Math.max(size.x, size.y, size.z);
+  model.scale.setScalar(scale);
+  model.position.sub(center.multiplyScalar(scale));
+  const box2 = new THREE.Box3().setFromObject(model);
+  model.position.sub(box2.getCenter(new THREE.Vector3()));
+  frameMaterials = [];
+
+  // For heavy models: disable shadows, simplify materials, skip expensive ops
+  if (isHeavy) {
+    keyLight.castShadow = false;
+    renderer.shadowMap.enabled = false;
+  } else {
+    keyLight.castShadow = true;
+    renderer.shadowMap.enabled = true;
+  }
+
+  model.traverse(child => {
+    if (!child.isMesh) return;
+    // Only enable shadows for light models
+    child.castShadow = !isHeavy;
+    child.receiveShadow = !isHeavy;
+    child.frustumCulled = true;
+    if (child.geometry) {
+      child.geometry.computeBoundingSphere();
+      if (!isHeavy) child.geometry.computeBoundingBox();
+    }
+    const mats = Array.isArray(child.material) ? child.material : [child.material];
+    mats.forEach(mat => {
+      if (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial) {
+        mat.envMapIntensity = isHeavy ? 0.5 : 1.0;
+        // Downgrade heavy model materials for performance
+        if (isHeavy) {
+          mat.flatShading = false;
+          mat.precision = 'lowp';
+        }
+      }
+      const isGlass = mat.alphaMode === 'BLEND' || (mat.transmission && mat.transmission > 0) ||
+        (mat.userData && mat.userData.gltfExtensions && mat.userData.gltfExtensions.KHR_materials_transmission) ||
+        (mat.transparent && mat.opacity < 0.5);
+      const nameL = (mat.name || '').toLowerCase();
+      const childL = (child.name || '').toLowerCase();
+      const isHandle = mat.metalness > 0.5 || nameL.includes('handle') || childL.includes('handle') || nameL.includes('#290');
+      if (!isGlass && !isHandle) frameMaterials.push(mat);
+    });
+  });
+  currentModel = model;
+  scene.add(model);
+  applyColour(currentColour);
+  if (!isHeavy) {
+    renderer.compile(scene, camera);
+    renderer.shadowMap.needsUpdate = true;
+  }
+  document.getElementById('productTitle').textContent = type.label + ' Windows';
+  document.getElementById('breadcrumbCurrent').textContent = type.label + ' Windows';
+  document.getElementById('priceAmount').textContent = type.price;
+  document.querySelectorAll('.wt-btn').forEach(b => b.classList.toggle('active', b.dataset.type === currentTypeId));
+  requestRender();
+}
+
+function applyColour(colour) {
+  currentColour = colour;
+  const c = new THREE.Color(colour.hex);
+  frameMaterials.forEach(m => { m.color.copy(c); m.needsUpdate = true; });
+  document.getElementById('btnSwatchPreview').style.background = colour.hex;
+  document.getElementById('btnColourName').textContent = colour.name;
+  document.querySelectorAll('.colour-option').forEach(el => el.classList.toggle('selected', el.dataset.name === colour.name));
+  requestRender();
+}
+
+let animId = null;
+function animateTo(pos, target, dur) {
+  dur = dur || 500;
+  if (animId) cancelAnimationFrame(animId);
+  const sp = camera.position.clone();
+  const ep = new THREE.Vector3(pos[0], pos[1], pos[2]);
+  const st = controls.target.clone();
+  const et = new THREE.Vector3(target[0], target[1], target[2]);
+  const t0 = performance.now();
+  function tick(now) {
+    let t = Math.min((now - t0) / dur, 1);
+    let e = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3) / 2;
+    camera.position.lerpVectors(sp, ep, e);
+    controls.target.lerpVectors(st, et, e);
+    controls.update();
+    requestRender();
+    if (t < 1) animId = requestAnimationFrame(tick);
+    else { animId = null; startDamping(30); }
+  }
+  animId = requestAnimationFrame(tick);
+}
+
+function orbitIncrement(dAz, dPol) {
+  const sph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+  sph.theta += dAz;
+  sph.phi = Math.max(0.1, Math.min(Math.PI - 0.1, sph.phi + dPol));
+  const p = new THREE.Vector3().setFromSpherical(sph).add(controls.target);
+  animateTo([p.x, p.y, p.z], [controls.target.x, controls.target.y, controls.target.z], 300);
+}
+
+canvas.addEventListener('pointerdown', () => startDamping(60));
+canvas.addEventListener('pointerup', () => startDamping(30));
+canvas.addEventListener('wheel', () => { requestRender(); startDamping(30); }, { passive: true });
+
+function renderLoop() {
+  requestAnimationFrame(renderLoop);
+  if (!needsRender && dampingFrames <= 0 && animId === null) return;
+  controls.update();
+  renderer.render(scene, camera);
+  needsRender = false;
+  if (dampingFrames > 0) dampingFrames--;
+}
+
+// UI: Window type grid
+const wtGrid = document.getElementById('windowTypeGrid');
+WINDOW_TYPES.forEach(type => {
+  const btn = document.createElement('button');
+  btn.className = 'wt-btn' + (type.id === currentTypeId ? ' active' : '');
+  btn.dataset.type = type.id;
+  btn.innerHTML = '<span class="wt-icon">' + type.icon + '</span><span class="wt-label">' + type.label + '</span>';
+  btn.addEventListener('click', () => loadModel(type.id));
+  wtGrid.appendChild(btn);
+});
+
+// UI: Colour dropdown
+const ddBtn = document.getElementById('colourDropdownBtn');
+const ddList = document.getElementById('colourDropdownList');
+const ddContainer = document.getElementById('colourDropdownContainer');
+const ddSearch = document.getElementById('colourSearchInput');
+const ddOptions = document.getElementById('colourOptionsContainer');
+
+function buildColourOptions(filter) {
+  filter = filter || '';
+  ddOptions.innerHTML = '';
+  const fl = filter.toLowerCase();
+  const frag = document.createDocumentFragment();
+  COLOURS.filter(c => c.name.toLowerCase().includes(fl)).forEach(colour => {
+    const opt = document.createElement('div');
+    opt.className = 'colour-option' + (colour.name === currentColour.name ? ' selected' : '');
+    opt.dataset.name = colour.name;
+    const sw = document.createElement('span');
+    sw.className = 'opt-swatch';
+    sw.style.background = colour.hex;
+    if (colour.name === 'White' || colour.name === 'Cream' || colour.name === 'Cream LG') sw.style.borderColor = '#bbb';
+    const lbl = document.createElement('span');
+    lbl.textContent = colour.name;
+    const chk = document.createElement('span');
+    chk.className = 'checkmark';
+    chk.textContent = '\u2713';
+    opt.appendChild(sw);
+    opt.appendChild(lbl);
+    opt.appendChild(chk);
+    opt.addEventListener('click', () => { applyColour(colour); closeDropdown(); });
+    frag.appendChild(opt);
+  });
+  ddOptions.appendChild(frag);
+}
+
+function openDropdown() {
+  ddList.classList.add('open');
+  ddBtn.classList.add('open');
+  ddSearch.value = '';
+  buildColourOptions();
+  requestAnimationFrame(() => {
+    const sel = ddOptions.querySelector('.selected');
+    if (sel) sel.scrollIntoView({ block: 'center' });
+  });
+  ddSearch.focus();
+}
+function closeDropdown() {
+  ddList.classList.remove('open');
+  ddBtn.classList.remove('open');
+}
+ddBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  ddList.classList.contains('open') ? closeDropdown() : openDropdown();
+});
+ddSearch.addEventListener('input', () => buildColourOptions(ddSearch.value));
+ddSearch.addEventListener('click', e => e.stopPropagation());
+document.addEventListener('click', e => { if (!ddContainer.contains(e.target)) closeDropdown(); });
+
+// UI: Control buttons
+document.getElementById('zoomInBtn').addEventListener('click', () => {
+  const d = camera.position.clone().sub(controls.target).normalize();
+  camera.position.addScaledVector(d, -0.5);
+  controls.update(); requestRender(); startDamping(30);
+});
+document.getElementById('zoomOutBtn').addEventListener('click', () => {
+  const d = camera.position.clone().sub(controls.target).normalize();
+  camera.position.addScaledVector(d, 0.5);
+  controls.update(); requestRender(); startDamping(30);
+});
+document.getElementById('rotUpBtn').addEventListener('click', () => orbitIncrement(0, -0.25));
+document.getElementById('rotDownBtn').addEventListener('click', () => orbitIncrement(0, 0.25));
+document.getElementById('rotLeftBtn').addEventListener('click', () => orbitIncrement(-0.25, 0));
+document.getElementById('rotRightBtn').addEventListener('click', () => orbitIncrement(0.25, 0));
+document.getElementById('isoBtn').addEventListener('click', () => animateTo([2.5, 1.8, 3], [0,0,0]));
+document.getElementById('resetBtn').addEventListener('click', () => animateTo([0, 0.3, 4], [0,0,0]));
+
+// UI: Fullscreen
+const viewerContainer = document.getElementById('viewerContainer');
+document.getElementById('fullscreenBtn').addEventListener('click', () => {
+  isFullscreen = !isFullscreen;
+  viewerContainer.classList.toggle('fullscreen', isFullscreen);
+  setTimeout(() => { onResize(); requestRender(); }, 50);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && isFullscreen) {
+    isFullscreen = false;
+    viewerContainer.classList.remove('fullscreen');
+    setTimeout(() => { onResize(); requestRender(); }, 50);
+  }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  switch (e.key) {
+    case 'ArrowUp': e.preventDefault(); orbitIncrement(0, -0.2); break;
+    case 'ArrowDown': e.preventDefault(); orbitIncrement(0, 0.2); break;
+    case 'ArrowLeft': e.preventDefault(); orbitIncrement(-0.2, 0); break;
+    case 'ArrowRight': e.preventDefault(); orbitIncrement(0.2, 0); break;
+    case '+': case '=': camera.position.multiplyScalar(0.9); controls.update(); requestRender(); break;
+    case '-': case '_': camera.position.multiplyScalar(1.1); controls.update(); requestRender(); break;
+    case 'r': case 'R': animateTo([0, 0.3, 4], [0,0,0]); break;
+  }
+});
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector('.tab-content[data-tab="' + btn.dataset.tab + '"]').classList.add('active');
+  });
+});
+
+// Resize
+let resizeTimer = null;
+function onResize() {
+  const wrap = canvas.parentElement;
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  if (w === 0 || h === 0) return;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+  requestRender();
+}
+function debouncedResize() {
+  if (resizeTimer) clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(onResize, 80);
+}
+window.addEventListener('resize', debouncedResize);
+new ResizeObserver(debouncedResize).observe(canvas.parentElement);
+
+// Init
+onResize();
+document.getElementById('btnSwatchPreview').style.background = currentColour.hex;
+document.getElementById('btnColourName').textContent = currentColour.name;
+loadModel('casement');
+renderLoop();
+
+// Staggered preloading — all models are now optimized (10-80MB each)
+(async function preloadAll() {
+  await new Promise(r => setTimeout(r, 3000));
+  for (let i = 0; i < WINDOW_TYPES.length; i++) {
+    const type = WINDOW_TYPES[i];
+    if (cache[type.id]) continue;
+    await new Promise(resolve => {
+      gltfLoader.load(type.path,
+        gltf => { cache[type.id] = gltf.scene; resolve(); },
+        undefined,
+        () => resolve()
+      );
+    });
+    await new Promise(r => setTimeout(r, 500));
+  }
+  console.log('All models preloaded');
+})();
+</script>
+</body>
+</html>

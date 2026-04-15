@@ -1,0 +1,121 @@
+.container {
+  position: relative;
+}
+
+/* Simple bordered text box — matches panes.com */
+.dropdownBtn {
+  width: 100%;
+  padding: 12px 16px;
+  background: #fff;
+  border: none;
+  font-size: 14px;
+  font-weight: 400;
+  color: #222;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-family: 'Inter', sans-serif;
+  text-align: left;
+}
+
+.dropdownBtn:hover {
+  background: #fafafa;
+}
+
+.dropdownBtn.open {
+  background: #fafafa;
+}
+
+.swatchPreview {
+  display: none;
+}
+
+.colourName {
+  flex: 1;
+}
+
+.chevron {
+  display: none;
+}
+
+.dropdownList {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: -1px;
+  right: -1px;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  max-height: 320px;
+  overflow: hidden;
+  z-index: 100;
+  animation: dropIn 0.12s ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+  color: #222;
+  outline: none;
+  font-family: 'Inter', sans-serif;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+.searchInput::placeholder { color: #bbb; }
+
+.optionsContainer {
+  max-height: 268px;
+  overflow-y: auto;
+}
+.optionsContainer::-webkit-scrollbar { width: 5px; }
+.optionsContainer::-webkit-scrollbar-track { background: transparent; }
+.optionsContainer::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+.option {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 13px;
+  color: #333;
+}
+.option:hover { background: #f5f5f5; }
+.option.selected {
+  background: #e8f0fe;
+  font-weight: 600;
+  color: #111;
+}
+
+.optSwatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.checkmark {
+  margin-left: auto;
+  color: #4a9eff;
+  font-size: 16px;
+}
+
+.noResults {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}

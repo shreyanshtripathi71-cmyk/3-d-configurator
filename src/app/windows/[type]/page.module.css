@@ -1,0 +1,405 @@
+/* ══════ Top Announcement Bar ══════ */
+.topBar {
+  background: #2563a8;
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+  padding: 10px 20px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+}
+
+/* ══════ Breadcrumb ══════ */
+.breadcrumb {
+  padding: 12px 40px;
+  font-size: 12px;
+  color: #555;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+}
+.breadcrumb a { color: #333; text-decoration: none; }
+.breadcrumb a:hover { text-decoration: underline; }
+.sep { margin: 0 4px; color: #999; }
+
+/* ══════ Product Page — two columns ══════ */
+.productPage {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 40px 60px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 60px;
+  align-items: start;
+  background: #fff;
+  min-height: 80vh;
+}
+
+/* ══════ LEFT COLUMN: Viewer ══════ */
+.viewerCol {
+  position: sticky;
+  top: 20px;
+}
+
+.viewerWrap {
+  position: relative;
+  background: transparent;
+  border: none;
+}
+.viewerWrap.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  border: none;
+  background: #fff;
+}
+.viewerWrap.fullscreen > div:first-of-type {
+  aspect-ratio: unset !important;
+  height: 100vh;
+}
+
+/* Expand button — top right */
+.expandBtn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.expandBtn:hover { opacity: 1; }
+
+/* ── Colour box — simple bordered text ── */
+.colourBox {
+  margin-top: 16px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+/* ── Controls — FLAT icons, NO borders, NO backgrounds ── */
+.controlsRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 20px 0 8px;
+}
+
+.iconBtn {
+  width: 34px;
+  height: 34px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  opacity: 1;
+  transition: opacity 0.15s;
+}
+.iconBtn:hover { opacity: 0.7; }
+.iconBtn:active { opacity: 0.5; transform: scale(0.92); }
+
+.iconSep {
+  display: inline-block;
+  width: 1.5px;
+  height: 24px;
+  background: #666;
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+
+/* Direction pad — cross/plus layout */
+.dpad {
+  display: grid;
+  grid-template-columns: 32px 32px 32px;
+  grid-template-rows: 28px 28px 28px;
+  gap: 0;
+}
+.dpad .iconBtn[data-pos="top"]    { grid-column: 2; grid-row: 1; }
+.dpad .iconBtn[data-pos="left"]   { grid-column: 1; grid-row: 2; }
+.dpad .iconBtn[data-pos="right"]  { grid-column: 3; grid-row: 2; }
+.dpad .iconBtn[data-pos="bottom"] { grid-column: 2; grid-row: 3; }
+
+.disclaimer {
+  font-size: 10px;
+  color: #999;
+  font-style: italic;
+  padding: 6px 0 0;
+}
+
+/* ══════ RIGHT COLUMN: Product Info (CENTERED) ══════ */
+.infoCol {
+  padding-top: 0;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 400;
+  color: #111;
+  margin-bottom: 6px;
+  text-align: center;
+  font-family: 'Inter', serif;
+  letter-spacing: -0.3px;
+}
+
+.manufacturer {
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #888;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.price {
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #111;
+  text-align: center;
+  margin-bottom: 28px;
+}
+.priceVal {
+  display: block;
+  font-size: 16px;
+  margin-top: 0;
+}
+
+/* ── Action Buttons — exact panes.com ── */
+.buttons {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.btnBlack,
+.btnBlue {
+  flex: 1;
+  padding: 16px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  transition: opacity 0.15s;
+  border-radius: 0;
+}
+.btnBlack {
+  background: #222;
+  color: #fff;
+}
+.btnBlack:hover { background: #444; }
+
+.btnBlue {
+  background: #1a3a6b;
+  color: #fff;
+}
+.btnBlue:hover { background: #24508f; }
+
+/* ── Description Section ── */
+.typeSection {
+  text-align: center;
+  margin-bottom: 16px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+.typeSectionTitle {
+  font-size: 22px;
+  font-weight: 400;
+  color: #111;
+  margin-bottom: 8px;
+}
+.typeSectionSub {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.descriptionText {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+  margin-bottom: 32px;
+}
+
+/* ── Specs Section ── */
+.specsSection {
+  margin-bottom: 32px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+.specsSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+.specsList {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #555;
+  padding-left: 20px;
+}
+.specsList li { margin-bottom: 2px; }
+
+/* ── Window Type Selector ── */
+.windowTypeSection {
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+  margin-bottom: 32px;
+}
+.windowTypeSectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #999;
+  margin-bottom: 14px;
+}
+
+.windowTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.wtBtn {
+  background: #fff;
+  border: 2px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 16px 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+}
+.wtBtn:hover { border-color: #ccc; background: #fafafa; }
+.wtActive {
+  border-color: #222 !important;
+  background: #fafafa;
+  box-shadow: 0 0 0 1px #222;
+}
+.wtIcon { font-size: 28px; line-height: 1; }
+.wtLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+.wtActive .wtLabel { color: #111; }
+
+/* ── Features ── */
+.featuresSection {
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+  margin-bottom: 32px;
+}
+.featuresSectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #999;
+  margin-bottom: 14px;
+}
+.featuresGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.featureCard {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 20px 14px;
+  text-align: center;
+  transition: all 0.15s;
+}
+.featureCard:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  border-color: #ddd;
+}
+.featIcon { font-size: 28px; margin-bottom: 8px; }
+.featLabel { font-size: 11px; font-weight: 600; color: #555; }
+
+/* ══════ Bottom CTA ══════ */
+.bottomCta {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  z-index: 999;
+  padding: 12px;
+}
+.bottomCtaBtn {
+  background: #1a1a1a;
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s;
+}
+.bottomCtaBtn:hover { background: #333; }
+
+/* ══════ Footer ══════ */
+.footer {
+  background: #111;
+  color: #888;
+  padding: 40px;
+  text-align: center;
+  font-size: 12px;
+}
+
+/* ══════ Responsive ══════ */
+@media (max-width: 960px) {
+  .productPage {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 20px;
+  }
+  .viewerCol { position: static; }
+  .buttons { flex-direction: column; }
+}
+
+@media (max-width: 600px) {
+  .title { font-size: 24px; }
+  .windowTypeGrid { grid-template-columns: repeat(2, 1fr); }
+  .featuresGrid { grid-template-columns: 1fr 1fr; }
+  .topBar { font-size: 11px; padding: 8px 15px; }
+  .breadcrumb { padding: 10px 15px; }
+}
