@@ -10,11 +10,11 @@ export default function Navbar() {
   return (
     <>
       <div className="top-bar">
-        🪟 <span>WindowCraft</span> — Explore our complete window collection in interactive 3D
+        🪟 <span>Nanokad</span> — Explore our complete window collection in interactive 3D
       </div>
       <nav className="navbar">
         <Link href="/" className="navbar-brand">
-          <span className="icon">🪟</span>WindowCraft
+          <span className="icon">🪟</span>Nanokad
         </Link>
         <ul className="navbar-nav">
           <li>

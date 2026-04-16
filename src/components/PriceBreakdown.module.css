@@ -1,0 +1,102 @@
+/* ══════ Price Breakdown ══════ */
+.container {
+  background: #1a1a1a;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+}
+
+.totalLabel {
+  color: #ccc;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.totalValue {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+/* ── Toggle Button ── */
+.breakdownToggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #7ab3ff;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0 18px 12px;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+
+.breakdownToggle:hover {
+  color: #a0ccff;
+}
+
+.toggleChev {
+  transition: transform 0.2s;
+}
+
+.toggleChevOpen {
+  transform: rotate(180deg);
+}
+
+/* ── Breakdown List ── */
+.breakdownList {
+  border-top: 1px solid #333;
+  padding: 12px 18px;
+  animation: breakdownSlide 0.2s ease;
+}
+
+@keyframes breakdownSlide {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 500px; }
+}
+
+.breakdownItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.breakdownLabel {
+  color: #aaa;
+  font-size: 12px;
+}
+
+.breakdownAmount {
+  color: #ccc;
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.breakdownDivider {
+  height: 1px;
+  background: #333;
+  margin: 8px 0;
+}
+
+.breakdownTotal .breakdownLabel {
+  color: #fff;
+  font-weight: 600;
+}
+
+.breakdownTotal .breakdownAmount {
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}

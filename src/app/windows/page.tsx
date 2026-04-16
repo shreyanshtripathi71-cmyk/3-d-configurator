@@ -6,7 +6,7 @@ import styles from './page.module.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Windows — WindowCraft 3D Configurator',
+  title: 'Windows — Nanokad 3D Configurator',
   description:
     'Browse our complete collection of 9 vinyl window types. Configure each in interactive 3D with 70+ color options.',
 };

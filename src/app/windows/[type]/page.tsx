@@ -160,7 +160,7 @@ export default function WindowConfiguratorPage() {
           </div>
 
           <div className={styles.buttons}>
-            <button className={styles.btnBlack}>Get an instant quote</button>
+            <button className={styles.btnBlack} onClick={() => router.push(`/configure/${typeId}`)}>Get an instant quote</button>
             <button className={styles.btnBlue}>Browse in-stock inventory</button>
           </div>
 

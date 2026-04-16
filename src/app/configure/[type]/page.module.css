@@ -1,0 +1,931 @@
+/* ══════════════════════════════════════════════════════════════
+   CONFIGURATOR — WIZARD + THREE-COLUMN LAYOUT
+   Panes.com parity styles
+   ══════════════════════════════════════════════════════════════ */
+
+/* ─── WIZARD PHASE ─── */
+.wizardContainer {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px 120px;
+}
+.wizardTitle {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 32px;
+  letter-spacing: -0.02em;
+}
+.wizardLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+.wizardLeft {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.wizardRight {
+  padding: 8px 0;
+  text-align: right;
+}
+.wizardWelcomeTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 12px;
+}
+.wizardWelcomeText {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+.wizardStepTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 8px;
+}
+.wizardStepText {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.wizardSection {
+  border-bottom: 1px solid #eee;
+}
+.wizardSectionAnimate {
+  animation: slideDown 0.3s ease-out;
+}
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 600px; }
+}
+.wizardSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #f5f5f5;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+}
+.wizardSectionBody {
+  padding: 16px;
+}
+.wizardField {
+  margin-bottom: 12px;
+}
+.wizardFieldLabel {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.wizardMeasureIcon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+  padding: 8px 0;
+  font-size: 13px;
+  color: #777;
+}
+.wizardGridSelector {
+  padding: 0;
+}
+.wizardGridHeader {
+  font-size: 12px;
+  color: #777;
+  text-align: center;
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid #eee;
+}
+.wizardGridOption {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: #444;
+  text-align: left;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f0f0f0;
+}
+.wizardGridOption:hover {
+  background: #f7f7fa;
+}
+.wizardGridOption:last-child {
+  border-bottom: none;
+}
+.wizardGridOptionActive {
+  background: #eef1ff !important;
+}
+.wizardGridSelected {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #444;
+}
+.wizardGridSelected svg:last-child {
+  margin-left: auto;
+}
+
+
+/* ─── CONFIGURATOR: Viewer + Right Area ─── */
+.configurator {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 0;
+  min-height: calc(100vh - 130px);
+  background: #fff;
+  border-top: 1px solid #eee;
+}
+
+.viewerColumn {
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 130px);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #eee;
+  background: #fafafa;
+}
+.viewerColumn.viewerFullscreen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1000;
+  width: 100vw;
+  height: 100vh;
+  background: #fff;
+}
+
+.viewerArea {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+.viewerArea canvas {
+  display: block;
+}
+.expandBtn {
+  position: absolute;
+  top: 10px; right: 10px;
+  z-index: 5;
+  width: 28px; height: 28px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: rgba(255,255,255,.9);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.expandBtn:hover { background: #fff; border-color: #999; }
+
+.controlsBar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-top: 1px solid #eee;
+  background: #fff;
+}
+.ctrlBtn {
+  width: 34px; height: 34px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.ctrlBtn:hover { border-color: #999; background: #f5f5f5; }
+.ctrlSep { width: 1px; height: 20px; background: #ddd; margin: 0 4px; }
+.dpad {
+  display: grid;
+  grid-template-columns: 34px 34px 34px;
+  grid-template-rows: auto auto;
+  gap: 2px;
+  align-items: center;
+}
+.dpad [data-pos="top"]    { grid-column: 2; }
+.dpad [data-pos="left"]   { grid-column: 1; grid-row: 2; }
+.dpad [data-pos="right"]  { grid-column: 3; grid-row: 2; }
+.dpad [data-pos="bottom"] { grid-column: 2; grid-row: 2; }
+
+.priceBar {
+  border-top: 1px solid #eee;
+}
+
+/* ── Right area: full-width config + split row ── */
+.rightArea {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  max-height: calc(100vh - 130px);
+}
+
+/* Full-width section (Window Configuration) */
+.configFullWidth {
+  width: 100%;
+  border-bottom: 1px solid #ddd;
+}
+
+/* 50/50 split row (Whole Opening Details | Specific Options) */
+.configSplitRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  flex: 1;
+}
+.splitLeft {
+  border-right: 1px solid #eee;
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+.splitRight {
+  overflow-y: auto;
+  padding-bottom: 20px;
+}
+
+/* ═══ SECTION HEADERS — panes.com: solid black bg, white text ═══ */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+  user-select: none;
+}
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.01em;
+}
+.sectionChevron {
+  transform: rotate(-90deg);
+  transition: transform 0.2s;
+  color: #ccc;
+}
+.sectionChevronOpen {
+  transform: rotate(0deg);
+}
+.sectionContent {
+  padding: 12px 16px 16px;
+}
+
+
+/* ─── Dimensions ─── */
+.dimensionRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.dimensionField {
+  display: flex;
+  flex-direction: column;
+}
+.dimensionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.dimensionInputWrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+.dimensionInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  font-family: inherit;
+  color: #333;
+  background: transparent;
+}
+.dimensionInput:focus {
+  background: #fcfcff;
+}
+.dimensionUnit {
+  padding: 0 12px;
+  font-size: 12px;
+  color: #888;
+  user-select: none;
+}
+
+
+/* ─── Depth Bar ─── */
+.depthBar {
+  text-align: center;
+  font-size: 13px;
+  color: #555;
+  padding: 10px;
+  background: #f7f7f9;
+  border-radius: 6px;
+  border: 1px solid #e8e8ef;
+}
+.depthValue {
+  font-weight: 700;
+  color: #222;
+}
+
+
+/* ─── Toggle ─── */
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+.toggleLabel {
+  font-size: 13px;
+  color: #444;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.toggle {
+  width: 42px;
+  height: 22px;
+  border-radius: 11px;
+  background: #ccc;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  padding: 0;
+}
+.toggle.active {
+  background: #4a7cff;
+}
+.toggleDot {
+  position: absolute;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px;
+  left: 3px;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle.active .toggleDot {
+  left: 23px;
+}
+
+
+/* ─── Energy Ratings ─── */
+.ratingsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.ratingsTable th {
+  background: #f0f0f5;
+  color: #444;
+  font-weight: 600;
+  padding: 6px;
+  border: 1px solid #e0e0e5;
+  text-align: center;
+}
+.ratingsTable td {
+  text-align: center;
+  padding: 8px;
+  border: 1px solid #e0e0e5;
+  font-weight: 500;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  font-size: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+.infoLabel {
+  color: #555;
+  font-weight: 500;
+}
+.infoValue {
+  color: #333;
+  font-weight: 600;
+  font-size: 11px;
+}
+.infoBadge {
+  font-weight: 700;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.infoBadgeGreen { background: #e6fbe6; color: #1a8a1a; }
+.infoBadgeRed   { background: #fbe6e6; color: #8a1a1a; }
+
+
+/* ─── Constraint Row ─── */
+.constraintRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 4px;
+  font-size: 11px;
+  text-align: center;
+  padding: 4px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  background: #f9f9fb;
+}
+.constraintRow span:nth-child(odd) { color: #888; font-weight: 500; }
+.constraintRow span:nth-child(even) { color: #333; font-weight: 600; }
+
+
+/* ─── Grills ─── */
+.grillCountRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.grillCountField {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.grillCountLabel {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.grillCountInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
+  font-family: inherit;
+  background: #fff;
+}
+.grillCountInput:focus { outline: none; border-color: #4a7cff; }
+
+
+/* ═══════════════════════════════════════════════════
+   WINDOW CONFIGURATION — exact panes.com parity
+   ═══════════════════════════════════════════════════ */
+
+/* ── "Number of Vertical Windows" row — full width, single line ── */
+.verticalDropdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+.verticalDropdown label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  margin-right: auto;
+}
+.verticalSelect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  position: relative;
+  min-width: 180px;
+}
+.verticalSelect select {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: inherit;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 20px;
+}
+.verticalSelect::after {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #666;
+  pointer-events: none;
+}
+
+/* Help icon (?) — panes.com style circle */
+.helpIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #999;
+  font-size: 11px;
+  font-weight: 700;
+  color: #888;
+  cursor: help;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+/* ── Per-row columns (side-by-side, panes.com style) ── */
+.windowConfigGrid {
+  display: flex;
+  gap: 0;
+  border-top: 1px solid #ddd;
+}
+.windowConfigColumn {
+  flex: 1;
+  border-right: 1px solid #ddd;
+  min-width: 0;
+}
+.windowConfigColumn:last-child {
+  border-right: none;
+}
+/* Color-coded column backgrounds — panes.com uses different bg per row */
+.windowConfigColumn:nth-child(1) { background: #fff; }
+.windowConfigColumn:nth-child(2) { background: #e2f0d9; }
+.windowConfigColumn:nth-child(3) { background: #fdfbef; }
+.windowConfigColumn:nth-child(4) { background: #e8e0f0; }
+
+/* Row title header — bold, centered */
+.rowTitleHeader {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  padding: 10px 6px 4px;
+  letter-spacing: 0.01em;
+}
+
+/* Per-row horizontal dropdown label */
+.rowHorizLabel {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  padding: 6px 8px 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+/* Per-row horizontal dropdown wrapper */
+.rowHorizWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 8px;
+}
+.rowHorizWrap select {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 24px;
+}
+
+/* "Click on a window below to edit" label */
+.cellEditLabel {
+  text-align: center;
+  font-size: 11px;
+  color: #666;
+  padding: 6px 4px 8px;
+}
+
+/* ═══ Cell buttons — panes.com exact style ═══ */
+.cellGrid {
+  display: grid;
+  gap: 4px;
+  padding: 0 8px 8px;
+}
+.cellBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 6px;
+  border: none;
+  border-radius: 4px;
+  background: #11436b;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 64px;
+}
+.cellBtn:hover {
+  opacity: 0.9;
+}
+.cellBtnActive {
+  background: #1a1a1a !important;
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.3);
+}
+.cellBtnId {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.cellBtnSize {
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+  margin-top: 2px;
+}
+.cellBtnType {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  font-style: normal;
+}
+
+/* ── Per-row height section ── */
+.rowHeightSection {
+  padding: 8px 10px 12px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+}
+.rowHeightLabel {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 4px;
+}
+.rowHeightWrap {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+}
+.rowHeightWrap input {
+  flex: 1;
+  padding: 7px 8px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+  color: #333;
+  background: transparent;
+  text-align: center;
+}
+.rowHeightWrap span {
+  padding: 0 10px;
+  font-size: 12px;
+  color: #888;
+}
+
+
+/* Legacy config grid display (keep for backward compat) */
+.configGridDisplay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+  font-size: 14px;
+  color: #444;
+}
+
+.rowGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+.rowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f0f2f7;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.rowHeaderTitle { font-weight: 600; color: #333; }
+.rowHeaderType { color: #666; font-style: italic; }
+
+.rowHeights {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+.rowHeightField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cellSelector {
+  margin-top: 12px;
+}
+
+
+/* ─── Bottom Bar ─── */
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 56px;
+  background: #fff;
+  border-top: 2px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  z-index: 100;
+}
+.bottomDescription { flex: 0 0 180px; }
+.bottomDescInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #333;
+  background: #fafafa;
+}
+.bottomDescInput:focus { outline: none; border-color: #4a7cff; }
+.bottomQty {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bottomQtyLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #333;
+}
+.bottomQtyInput {
+  width: 56px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+  font-family: inherit;
+}
+.bottomQtyInput:focus { outline: none; border-color: #4a7cff; }
+
+.addToCartBtn {
+  flex: 1;
+  max-width: 320px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.addToCartBtn:hover { opacity: 0.9; }
+
+.bottomPrice {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+  margin-left: auto;
+}
+.bottomNeedHelp {
+  font-size: 12px;
+  color: #888;
+  cursor: pointer;
+  border-left: 1px solid #ddd;
+  padding-left: 12px;
+}
+.bottomNeedHelp:hover { color: #555; }
+
+
+/* ─── Updating Overlay ─── */
+.updatingOverlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255,255,255,0.6);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(1px);
+}
+.updatingBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.updatingSpinner {
+  width: 32px; height: 32px;
+  border: 3px solid #eee;
+  border-top-color: #4a7cff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.updatingText {
+  font-size: 13px;
+  color: #555;
+}
+
+
+/* ─── Responsive ─── */
+@media (max-width: 1200px) {
+  .configurator {
+    grid-template-columns: 300px 1fr 1fr;
+  }
+  .wizardLayout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .wizardRight {
+    text-align: left;
+    order: -1;
+    padding: 0 4px;
+  }
+}
+
+@media (max-width: 900px) {
+  .configurator {
+    grid-template-columns: 1fr;
+  }
+  .viewerColumn {
+    position: relative;
+    top: auto;
+    height: 350px;
+    border-right: none;
+    border-bottom: 1px solid #eee;
+  }
+  .centerColumn, .rightColumn {
+    max-height: none;
+    border-right: none;
+  }
+  .windowConfigGrid {
+    flex-direction: column;
+  }
+  .windowConfigColumn {
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+}

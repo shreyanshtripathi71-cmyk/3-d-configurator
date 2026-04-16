@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "WindowCraft — 3D Window Configurator",
+  title: "Nanokad — 3D Window Configurator",
   description:
     "Design your perfect windows in interactive 3D. Explore casement, awning, picture, hung, and slider windows with real-time color customization.",
 };
