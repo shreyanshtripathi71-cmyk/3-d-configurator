@@ -7,7 +7,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import type { Colour } from '@/data/windows';
 import { HEAVY_MODELS } from '@/data/windows';
-import { buildProceduralWindow, type CellType } from './ProceduralWindow';
+import { buildProceduralWindow, buildGrillGroup, type CellType, type GrillCellConfig } from './ProceduralWindow';
 
 /* ─── Types ─── */
 export interface ViewerControlsAPI {
@@ -26,7 +26,28 @@ export interface GridCellInfo {
   row: number;
   col: number;
   modelPath: string;
-  cellType?: CellType; // 'awning' | 'picture' | 'fixed' | 'casement'
+  cellType?: CellType;
+  /** Grill configuration for this cell */
+  grillPattern?: string;
+  grillBarType?: string;
+  grillBarSize?: string;
+  grillColor?: string;
+  grillVertical?: number;
+  grillHorizontal?: number;
+  // Prairie-specific
+  prairieHBarLayout?: string;
+  prairieVBarLayout?: string;
+  prairieHBarDaylight?: number;
+  prairieVBarDaylight?: number;
+  prairieBarSpacing?: number;
+  prairieLadderHead?: number;
+  prairieLadderSill?: number;
+  prairieLadderLeft?: number;
+  prairieLadderRight?: number;
+  prairieHSupportBars?: number;
+  prairieVSupportBars?: number;
+  // Ladder-specific
+  ladderBarSpacing?: number;
 }
 
 export interface ViewerGridConfig {
@@ -48,6 +69,8 @@ interface WindowViewerProps {
   onLoaded?: () => void;
   controlsRef?: React.MutableRefObject<ViewerControlsAPI | null>;
   grid?: ViewerGridConfig;
+  /** Default camera Z distance — lower = closer/bigger model */
+  defaultZoom?: number;
 }
 
 export default function WindowViewer({
@@ -59,6 +82,7 @@ export default function WindowViewer({
   onLoaded,
   controlsRef,
   grid,
+  defaultZoom = 4.8,
 }: WindowViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sceneRef = useRef<{
@@ -76,6 +100,7 @@ export default function WindowViewer({
   } | null>(null);
   const loaderRef = useRef<GLTFLoader | null>(null);
   const cacheRef = useRef<Record<string, THREE.Group>>({});
+  const grillCacheRef = useRef<Record<string, THREE.Group>>({});
   const colourRef = useRef(colour);
   const dimensionsRef = useRef(dimensions);
   const gridRef = useRef(grid);
@@ -88,7 +113,7 @@ export default function WindowViewer({
 
   // Stable key from grid config to trigger reload
   const gridKey = grid
-    ? `${grid.rows}x${grid.cols}|${grid.widthInches}x${grid.heightInches}|${grid.cells.map(c => `${c.row},${c.col}:${c.cellType || 'awning'}`).join(';')}`
+    ? `${grid.rows}x${grid.cols}|${grid.widthInches}x${grid.heightInches}|${grid.cells.map(c => `${c.row},${c.col}:${c.cellType || 'awning'}:${c.grillPattern || 'none'}:${c.grillBarType || 'flat'}:${c.grillBarSize || '11/16'}:${c.grillColor || 'white'}:${c.grillVertical || 1}:${c.grillHorizontal || 1}:${c.prairieHBarLayout || ''}:${c.prairieVBarLayout || ''}:${c.prairieHBarDaylight || 0}:${c.prairieVBarDaylight || 0}:${c.prairieLadderHead || 0}:${c.prairieLadderSill || 0}:${c.prairieLadderLeft || 0}:${c.prairieLadderRight || 0}:${c.prairieHSupportBars || 0}:${c.prairieVSupportBars || 0}:${c.ladderBarSpacing || 16}`).join(';')}`
     : 'none';
 
   // ═══ Initialize Three.js scene (runs once) ═══
@@ -99,11 +124,12 @@ export default function WindowViewer({
     const renderer = new THREE.WebGLRenderer({
       canvas, antialias: true, powerPreference: 'high-performance', stencil: false, alpha: false,
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.5;
+    renderer.toneMappingExposure = 1.4;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.enabled = false;
+    renderer.localClippingEnabled = true; // needed for diamond grill clipping
     renderer.shadowMap.type = THREE.VSMShadowMap;
     renderer.shadowMap.autoUpdate = false;
 
@@ -111,7 +137,7 @@ export default function WindowViewer({
     scene.background = new THREE.Color(0xffffff);
 
     const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 50);
-    camera.position.set(0, 0.3, 4.8);
+    camera.position.set(0, 0.3, defaultZoom);
 
     const controls = new OrbitControls(camera, canvas);
     controls.enableDamping = true;
@@ -130,47 +156,35 @@ export default function WindowViewer({
     const startDamping = (n = 60) => { dampingFrames = Math.max(dampingFrames, n); requestRender(); };
     controls.addEventListener('change', requestRender);
 
-    // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-    const hemiLight = new THREE.HemisphereLight(0xf0f0ff, 0x9999a0, 0.7);
+    // Lights — very soft, flat, high-key (matching panes.com clean look)
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xe8e8e8, 0.5);
     hemiLight.position.set(0, 10, 0);
     scene.add(hemiLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    keyLight.position.set(3, 8, 5);
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.set(1024, 1024);
-    keyLight.shadow.camera.near = 0.5;
-    keyLight.shadow.camera.far = 25;
-    keyLight.shadow.camera.left = -5;
-    keyLight.shadow.camera.right = 5;
-    keyLight.shadow.camera.top = 5;
-    keyLight.shadow.camera.bottom = -5;
-    keyLight.shadow.bias = -0.0003;
-    keyLight.shadow.normalBias = 0.02;
-    keyLight.shadow.radius = 5;
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    keyLight.position.set(2, 6, 5);
+    keyLight.castShadow = false;
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0xe0e8ff, 0.9);
-    fillLight.position.set(-5, 4, -3);
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    fillLight.position.set(-4, 4, -2);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0xffeedd, 0.7);
-    rimLight.position.set(0, 3, -6);
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    rimLight.position.set(0, 2, -6);
     scene.add(rimLight);
 
-    const bottomFill = new THREE.DirectionalLight(0xdde0e8, 0.3);
+    const bottomFill = new THREE.DirectionalLight(0xf0f0f0, 0.3);
     bottomFill.position.set(0, -3, 2);
     scene.add(bottomFill);
 
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(30, 30),
-      new THREE.ShadowMaterial({ opacity: 0.08 })
-    );
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -1.8;
-    ground.receiveShadow = true;
-    scene.add(ground);
+    // Strong front fill for flat, even illumination
+    const frontFill = new THREE.DirectionalLight(0xffffff, 0.6);
+    frontFill.position.set(0, 0, 10);
+    scene.add(frontFill);
+
+    // Shadow ground plane removed — user requested no shadows
 
     // Environment map
     const pmrem = new THREE.PMREMGenerator(renderer);
@@ -314,13 +328,17 @@ export default function WindowViewer({
       rotateDown: () => orbitIncrement(0, 0.25),
       rotateLeft: () => orbitIncrement(-0.25, 0),
       rotateRight: () => orbitIncrement(0.25, 0),
-      resetView: () => animateTo([0, 0.3, 4.8], [0, 0, 0]),
+      resetView: () => animateTo([0, 0.3, defaultZoom], [0, 0, 0]),
       isoView: () => animateTo([2.5, 1.8, 3], [0, 0, 0]),
       toggleDimensions: () => {
         if (!s.currentModel) return;
-        // Toggle all Lines and Sprites (dimension lines + labels)
+        // Toggle all Lines, Sprites (dimension labels), and label Meshes
         s.currentModel.traverse((child) => {
           if (child instanceof THREE.Line || child instanceof THREE.Sprite) {
+            child.visible = !child.visible;
+          }
+          // Also toggle 3D label meshes (renderOrder 999)
+          if ((child as THREE.Mesh).isMesh && child.renderOrder === 999) {
             child.visible = !child.visible;
           }
         });
@@ -400,10 +418,17 @@ export default function WindowViewer({
 
     const finalize = (mats: THREE.MeshStandardMaterial[], zoomDist?: number) => {
       if (isHeavy) { s.keyLight.castShadow = false; s.renderer.shadowMap.enabled = false; }
-      else { s.keyLight.castShadow = true; s.renderer.shadowMap.enabled = true; }
+      else { s.keyLight.castShadow = false; s.renderer.shadowMap.enabled = false; }
 
-      const c = new THREE.Color(colourRef.current.hex);
-      mats.forEach(m => { m.color.copy(c); m.needsUpdate = true; });
+      // For procedural windows, colors are already set correctly during construction
+      // (exterior + interior split). Only update non-procedural (GLTF) frame materials.
+      if (!useProcedural) {
+        const c = new THREE.Color(colourRef.current.hex);
+        mats.forEach(m => { m.color.copy(c); m.needsUpdate = true; });
+      } else {
+        // Just trigger updates, don't change colors
+        mats.forEach(m => { m.needsUpdate = true; });
+      }
 
       if (!isHeavy) { s.renderer.compile(s.scene, s.camera); s.renderer.shadowMap.needsUpdate = true; }
 
@@ -419,19 +444,57 @@ export default function WindowViewer({
     };
 
     /* ═══════════════════════════════════════════
-       PROCEDURAL MODEL (grid-aware)
+       PROCEDURAL MODEL (grid-aware, high quality)
        ═══════════════════════════════════════════ */
     if (useProcedural && currentGrid) {
       const frameCol = new THREE.Color(colourRef.current.hex);
 
-      // Map grid cells to procedural cell definitions
-      const proceduralCells = currentGrid.cells.map(c => ({
-        row: c.row,
-        col: c.col,
-        type: (c.cellType || 'awning') as CellType,
-      }));
+      // Map grid cells to procedural cell definitions (with grill config)
+      const frameCol3 = new THREE.Color(colourRef.current.hex);
+      const intCol3 = interiorColorHex ? new THREE.Color(interiorColorHex) : new THREE.Color(0.95, 0.95, 0.95);
+      const proceduralCells = currentGrid.cells.map(c => {
+        // Resolve grill color
+        let grillColorResolved: THREE.Color | undefined;
+        if (c.grillColor === 'brass') grillColorResolved = new THREE.Color(0.76, 0.63, 0.21);
+        else if (c.grillColor === 'pewter') grillColorResolved = new THREE.Color(0.6, 0.6, 0.58);
+        else if (c.grillColor === 'black') grillColorResolved = new THREE.Color(0.12, 0.12, 0.12);
+        else grillColorResolved = frameCol3.clone(); // white = match frame color
 
-      const { group: windowGroup, frameMaterials } = buildProceduralWindow({
+        const grill: GrillCellConfig | undefined = (c.grillPattern && c.grillPattern !== 'none') ? {
+          pattern: c.grillPattern,
+          barType: c.grillBarType || 'georgian',
+          barSize: c.grillBarSize || '1',
+          color: grillColorResolved,
+          verticalBars: c.grillVertical || 1,
+          horizontalBars: c.grillHorizontal || 1,
+          // Prairie-specific
+          prairieHBarLayout: c.prairieHBarLayout,
+          prairieVBarLayout: c.prairieVBarLayout,
+          prairieHBarDaylight: c.prairieHBarDaylight,
+          prairieVBarDaylight: c.prairieVBarDaylight,
+          prairieBarSpacing: c.prairieBarSpacing,
+          prairieLadderHead: c.prairieLadderHead,
+          prairieLadderSill: c.prairieLadderSill,
+          prairieLadderLeft: c.prairieLadderLeft,
+          prairieLadderRight: c.prairieLadderRight,
+          prairieHSupportBars: c.prairieHSupportBars,
+          prairieVSupportBars: c.prairieVSupportBars,
+          ladderBarSpacing: c.ladderBarSpacing,
+        } : undefined;
+
+        return {
+          row: c.row,
+          col: c.col,
+          type: (c.cellType || 'awning') as CellType,
+          grill,
+        };
+      });
+
+      // ALL window types use GLTF models
+      const baseGltfTypes = ['single-hung', 'double-hung', 'single-slider', 'double-slider', 'end-vent', 'awning', 'casement'];
+      const gltfTypes = [...baseGltfTypes, 'picture', 'fixed', 'high-fix', 'highfix'];
+
+      const { group: windowGroup, frameMaterials, gltfCellBounds } = buildProceduralWindow({
         widthInches: currentGrid.widthInches!,
         heightInches: currentGrid.heightInches!,
         rows: currentGrid.rows,
@@ -440,19 +503,431 @@ export default function WindowViewer({
         rowColCounts: currentGrid.rowColCounts,
         frameColor: frameCol,
         interiorColor: interiorColorHex ? new THREE.Color(interiorColorHex) : undefined,
+        gltfCellTypes: gltfTypes as CellType[],
       });
 
       s.frameMaterials = frameMaterials;
       s.currentModel = windowGroup;
       s.scene.add(windowGroup);
 
-      // Procedural model has built-in dimension lines — no need for external dimGroup
-      // Don't apply color override (procedural frames use specific gray)
-      s.keyLight.castShadow = true;
-      s.renderer.shadowMap.enabled = true;
-      s.renderer.compile(s.scene, s.camera);
-      s.renderer.shadowMap.needsUpdate = true;
+      // ── Component Assembly: load GLTF parts into each cell ──
+      // Map each cell type to its component directory and files
+      const COMP_MAP: Record<string, { base: string; files: string[] }> = {
+        'single-hung': {
+          base: '/windows/single-hung/components/',
+          files: ['frame.glb', 'sash_or_other.glb', 'meeting_rail.glb', 'hardware.glb', 'glass.glb'],
+        },
+        'double-hung': {
+          base: '/windows/double-hung/components/',
+          files: ['sash_or_other.glb', 'meeting_rail.glb', 'hardware.glb', 'glass.glb'],
+        },
+        'single-slider': {
+          base: '/windows/single-slider/components/',
+          files: ['sash_or_other.glb', 'meeting_rail_vertical.glb', 'glass.glb'],
+        },
+        'double-slider': {
+          base: '/windows/double-slider/components/',
+          files: ['sash_or_other.glb', 'meeting_rail_vertical.glb', 'hardware.glb', 'glass.glb'],
+        },
+        'end-vent': {
+          base: '/windows/end-vent/components/',
+          files: ['sash_or_other.glb', 'glass.glb'],
+        },
+        'awning': {
+          base: '/windows/awning/',
+          files: ['AwningWindow.gltf'],
+        },
+        'casement': {
+          base: '/windows/casement/',
+          files: ['CasementWindow.gltf'],
+        },
+        'picture': {
+          base: '/windows/picture/',
+          files: ['PictureWindow_Model_1.gltf'],
+        },
+        'high-fix': {
+          base: '/windows/high-fix/',
+          files: ['HighFixWindow_DoubleGlazing.gltf'],
+        },
+        'highfix': {
+          base: '/windows/high-fix/',
+          files: ['HighFixWindow_DoubleGlazing.gltf'],
+        },
+        'fixed': {
+          base: '/windows/picture/',
+          files: ['PictureWindow_Model_1.gltf'],
+        },
+      };
 
+      if (gltfCellBounds.length > 0) {
+        // Group cells by type so we load components once per type
+        const cellsByType: Record<string, typeof gltfCellBounds> = {};
+        for (const cb of gltfCellBounds) {
+          const t = cb.type;
+          if (!cellsByType[t]) cellsByType[t] = [];
+          cellsByType[t].push(cb);
+        }
+
+        for (const [cellType, cells] of Object.entries(cellsByType)) {
+          const config = COMP_MAP[cellType];
+          if (!config) continue; // No components for this type, skip
+
+          let loadedCount = 0;
+          const componentScenes: Record<string, THREE.Group> = {};
+
+          const assembleForType = () => {
+            if (loadedCount < config.files.length) return;
+
+            // Exterior color from user selection (visible from front/default view)
+            const exteriorColor = new THREE.Color(colourRef.current.hex);
+            const exteriorColorDark = exteriorColor.clone().multiplyScalar(0.88);
+            // Detect dark exterior for rich material treatment
+            const extBrightness = exteriorColor.r * 0.299 + exteriorColor.g * 0.587 + exteriorColor.b * 0.114;
+            const isDarkExterior = extBrightness < 0.45;
+
+            // Interior color (visible from back/inside view)
+            const intColorHex = interiorColorHex || '#dcdcdc';
+            const interiorCol = new THREE.Color(intColorHex);
+            const interiorColDark = interiorCol.clone().multiplyScalar(0.88);
+            const intBrightness = interiorCol.r * 0.299 + interiorCol.g * 0.587 + interiorCol.b * 0.114;
+            const isDarkInterior = intBrightness < 0.45;
+
+            // Merge all loaded components into one reference group
+            const refGroup = new THREE.Group();
+            for (const name of config.files) {
+              const scene = componentScenes[name];
+              if (scene) {
+                const cloned = scene.clone(true);
+
+                // ── Face-normal-based exterior/interior split ──
+                // Reference (panes.com): front face + all side edges = exterior color
+                // Only the back face (-Z normals) = interior color
+                // This creates the correct two-tone appearance visible when rotating the window
+
+                // Create materials for exterior and interior
+                const extFrameMat = new THREE.MeshPhysicalMaterial({
+                  color: exteriorColor.clone(),
+                  roughness: isDarkExterior ? 0.35 : 0.6,
+                  metalness: isDarkExterior ? 0.15 : 0.0,
+                  envMapIntensity: isDarkExterior ? 1.0 : 0.4,
+                  clearcoat: isDarkExterior ? 0.3 : 0.05,
+                  clearcoatRoughness: isDarkExterior ? 0.2 : 0.5,
+                });
+                extFrameMat.userData = { colorRole: 'exterior' };
+
+                const intFrameMat = new THREE.MeshPhysicalMaterial({
+                  color: interiorCol.clone(),
+                  roughness: isDarkInterior ? 0.35 : 0.6,
+                  metalness: isDarkInterior ? 0.15 : 0.0,
+                  envMapIntensity: isDarkInterior ? 1.0 : 0.4,
+                  clearcoat: isDarkInterior ? 0.3 : 0.05,
+                  clearcoatRoughness: isDarkInterior ? 0.2 : 0.5,
+                });
+                intFrameMat.userData = { colorRole: 'interior' };
+
+                const extFrameMatDark = new THREE.MeshPhysicalMaterial({
+                  color: exteriorColorDark.clone(),
+                  roughness: isDarkExterior ? 0.4 : 0.7,
+                  metalness: isDarkExterior ? 0.1 : 0.0,
+                  envMapIntensity: isDarkExterior ? 0.8 : 0.3,
+                });
+                extFrameMatDark.userData = { colorRole: 'exterior' };
+
+                const intFrameMatDark = new THREE.MeshPhysicalMaterial({
+                  color: interiorColDark.clone(),
+                  roughness: isDarkInterior ? 0.4 : 0.7,
+                  metalness: isDarkInterior ? 0.1 : 0.0,
+                  envMapIntensity: isDarkInterior ? 0.8 : 0.3,
+                });
+                intFrameMatDark.userData = { colorRole: 'interior' };
+
+                // Compute model bounding box for Z-center reference
+                const modelBox = new THREE.Box3().setFromObject(cloned);
+                const modelCenter = modelBox.getCenter(new THREE.Vector3());
+
+                // Threshold: only strongly back-facing faces = interior color
+                // -0.4 ensures side faces stay exterior colored (like panes.com reference)
+                const BACK_NORMAL_THRESHOLD = -0.4;
+
+                const meshesToReplace: { parent: THREE.Object3D; oldMesh: THREE.Mesh; newMeshes: THREE.Mesh[] }[] = [];
+
+                cloned.traverse(c => {
+                  if (!(c as THREE.Mesh).isMesh) return;
+                  const mesh = c as THREE.Mesh;
+                  mesh.castShadow = false;
+                  mesh.receiveShadow = false;
+
+                  // Get original material(s)
+                  const origMats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                  const firstMat = origMats[0] as THREE.MeshStandardMaterial;
+                  if (!firstMat || !firstMat.color) return;
+
+                  // Check if it's glass (transparent material)
+                  const isGlass = firstMat.transparent || firstMat.opacity < 0.9 ||
+                    (firstMat.name && (firstMat.name.toLowerCase().includes('glass') || firstMat.name.includes('245')));
+
+                  // Check if it's hardware/metallic
+                  const matName = (firstMat.name || '').toLowerCase();
+                  const meshNameLower = (mesh.name || '').toLowerCase();
+                  const isHardware = firstMat.metalness > 0.5 || matName.includes('handle') ||
+                    matName.includes('lock') || matName.includes('iron') || matName.includes('metal') ||
+                    matName.includes('hardware') || matName.includes('#290') ||
+                    meshNameLower.includes('handle') || meshNameLower.includes('hardware');
+
+                  if (isGlass) {
+                    // Glass: make transparent
+                    for (let i = 0; i < origMats.length; i++) {
+                      const clonedMat = (origMats[i] as THREE.MeshStandardMaterial).clone();
+                      clonedMat.transparent = true;
+                      clonedMat.opacity = 0.08;
+                      clonedMat.color.set(0xf8f8f8);
+                      clonedMat.userData = { ...clonedMat.userData, colorRole: 'glass' };
+                      if (Array.isArray(mesh.material)) mesh.material[i] = clonedMat;
+                      else mesh.material = clonedMat;
+                    }
+                    return;
+                  }
+
+                  if (isHardware) {
+                    // Hardware: keep original appearance
+                    for (let i = 0; i < origMats.length; i++) {
+                      const clonedMat = (origMats[i] as THREE.MeshStandardMaterial).clone();
+                      clonedMat.userData = { ...clonedMat.userData, colorRole: 'hardware' };
+                      if (Array.isArray(mesh.material)) mesh.material[i] = clonedMat;
+                      else mesh.material = clonedMat;
+                    }
+                    return;
+                  }
+
+                  // ── FRAME MESH: Split geometry by face normal direction ──
+                  // Front + sides → exterior color, back → interior color
+                  const geo = mesh.geometry;
+                  if (!geo || !geo.index) {
+                    // Non-indexed geometry or missing: fall back to position-based split
+                    const meshBox = new THREE.Box3().setFromObject(mesh);
+                    const meshCenterZ = (meshBox.min.z + meshBox.max.z) / 2;
+                    const isBack = meshCenterZ < modelCenter.z;
+                    const origBrightness = firstMat.color.r * 0.299 + firstMat.color.g * 0.587 + firstMat.color.b * 0.114;
+                    const targetMat = isBack
+                      ? (origBrightness < 0.3 ? intFrameMatDark : intFrameMat)
+                      : (origBrightness < 0.3 ? extFrameMatDark : extFrameMat);
+                    mesh.material = targetMat.clone();
+                    return;
+                  }
+
+                  // For indexed geometry: classify each triangle by its face normal Z component
+                  const posAttr = geo.getAttribute('position');
+                  const normalAttr = geo.getAttribute('normal');
+                  const indexArr = geo.index.array;
+                  const triCount = indexArr.length / 3;
+
+                  // We need world-space normals, so apply mesh's world matrix to normals
+                  mesh.updateMatrixWorld(true);
+                  const normalMatrix = new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld);
+
+                  const exteriorTriIndices: number[] = [];
+                  const interiorTriIndices: number[] = [];
+
+                  const vA = new THREE.Vector3();
+                  const vB = new THREE.Vector3();
+                  const vC = new THREE.Vector3();
+                  const faceNormal = new THREE.Vector3();
+
+                  for (let t = 0; t < triCount; t++) {
+                    const i0 = indexArr[t * 3];
+                    const i1 = indexArr[t * 3 + 1];
+                    const i2 = indexArr[t * 3 + 2];
+
+                    if (normalAttr) {
+                      // Average vertex normals for face normal
+                      vA.set(normalAttr.getX(i0), normalAttr.getY(i0), normalAttr.getZ(i0));
+                      vB.set(normalAttr.getX(i1), normalAttr.getY(i1), normalAttr.getZ(i1));
+                      vC.set(normalAttr.getX(i2), normalAttr.getY(i2), normalAttr.getZ(i2));
+                      faceNormal.addVectors(vA, vB).add(vC).normalize();
+                    } else {
+                      // Compute face normal from positions
+                      vA.set(posAttr.getX(i0), posAttr.getY(i0), posAttr.getZ(i0));
+                      vB.set(posAttr.getX(i1), posAttr.getY(i1), posAttr.getZ(i1));
+                      vC.set(posAttr.getX(i2), posAttr.getY(i2), posAttr.getZ(i2));
+                      const edge1 = new THREE.Vector3().subVectors(vB, vA);
+                      const edge2 = new THREE.Vector3().subVectors(vC, vA);
+                      faceNormal.crossVectors(edge1, edge2).normalize();
+                    }
+
+                    // Transform normal to world space
+                    faceNormal.applyMatrix3(normalMatrix).normalize();
+
+                    // Classify by face normal direction: 
+                    // Front face + all sides = EXTERIOR color
+                    // Only strongly back-facing faces = INTERIOR color
+                    // Threshold -0.4: side faces with slight backward tilt stay exterior
+                    if (faceNormal.z < BACK_NORMAL_THRESHOLD) {
+                      interiorTriIndices.push(t * 3, t * 3 + 1, t * 3 + 2);
+                    } else {
+                      exteriorTriIndices.push(t * 3, t * 3 + 1, t * 3 + 2);
+                    }
+                  }
+
+                  // If all faces are one side, just set the material directly
+                  if (interiorTriIndices.length === 0) {
+                    const origBrightness = firstMat.color.r * 0.299 + firstMat.color.g * 0.587 + firstMat.color.b * 0.114;
+                    mesh.material = (origBrightness < 0.3 ? extFrameMatDark : extFrameMat).clone();
+                    return;
+                  }
+                  if (exteriorTriIndices.length === 0) {
+                    const origBrightness = firstMat.color.r * 0.299 + firstMat.color.g * 0.587 + firstMat.color.b * 0.114;
+                    mesh.material = (origBrightness < 0.3 ? intFrameMatDark : intFrameMat).clone();
+                    return;
+                  }
+
+                  // Build new index buffer with two material groups
+                  const newIndices: number[] = [];
+                  // Group 0: exterior faces
+                  const extStart = 0;
+                  for (const idx of exteriorTriIndices) {
+                    newIndices.push(indexArr[idx]);
+                  }
+                  const extCount = exteriorTriIndices.length;
+                  // Group 1: interior faces
+                  const intStart = newIndices.length;
+                  for (const idx of interiorTriIndices) {
+                    newIndices.push(indexArr[idx]);
+                  }
+                  const intCount = interiorTriIndices.length;
+
+                  // Clone geometry and set new index + groups
+                  const newGeo = geo.clone();
+                  newGeo.setIndex(new THREE.BufferAttribute(new Uint32Array(newIndices), 1));
+                  newGeo.clearGroups();
+                  newGeo.addGroup(extStart, extCount, 0);
+                  newGeo.addGroup(intStart, intCount, 1);
+
+                  // Determine which variant to use based on original brightness
+                  const origBrightness = firstMat.color.r * 0.299 + firstMat.color.g * 0.587 + firstMat.color.b * 0.114;
+                  const useExtMat = origBrightness < 0.3 ? extFrameMatDark.clone() : extFrameMat.clone();
+                  const useIntMat = origBrightness < 0.3 ? intFrameMatDark.clone() : intFrameMat.clone();
+
+                  mesh.geometry = newGeo;
+                  mesh.material = [useExtMat, useIntMat];
+                });
+                refGroup.add(cloned);
+              }
+            }
+
+            const refBox = new THREE.Box3().setFromObject(refGroup);
+            const refSize = refBox.getSize(new THREE.Vector3());
+            const refCenter = refBox.getCenter(new THREE.Vector3());
+
+            // Compute fixed Z-scale from full window size
+            const maxDim = Math.max(currentGrid.widthInches!, currentGrid.heightInches!);
+            const normS = 3.0 / maxDim;
+            const totalSceneW = currentGrid.widthInches! * normS;
+            const totalSceneH = currentGrid.heightInches! * normS;
+            const fixedZScale = Math.min(totalSceneW / refSize.x, totalSceneH / refSize.y);
+
+            // Place a clone in each cell of this type
+            for (const cb of cells) {
+              const cellGroup = refGroup.clone(true);
+              cellGroup.position.set(-refCenter.x, -refCenter.y, -refCenter.z);
+
+              const scaleX = cb.w / refSize.x;
+              const scaleY = cb.h / refSize.y;
+
+              const pivot = new THREE.Group();
+              pivot.add(cellGroup);
+              pivot.scale.set(scaleX, scaleY, fixedZScale);
+              pivot.position.set(cb.x, cb.y, 0);
+              windowGroup.add(pivot);
+
+              // ── Grills: find EXACT glass position from the placed GLTF model ──
+              const matchingCell = proceduralCells.find(pc => pc.row === cb.row && pc.col === cb.col);
+              if (matchingCell?.grill && matchingCell.grill.pattern !== 'none') {
+                // Force matrix computation so world-space bounds are accurate
+                pivot.updateMatrixWorld(true);
+
+                // Find glass meshes by their tagged colorRole
+                const pivotGlassBox = new THREE.Box3();
+                let pivotHasGlass = false;
+                pivot.traverse((child: THREE.Object3D) => {
+                  if (!(child as THREE.Mesh).isMesh) return;
+                  const mesh = child as THREE.Mesh;
+                  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                  if (mats.some(m => (m as any).userData?.colorRole === 'glass')) {
+                    pivotGlassBox.expandByObject(mesh);
+                    pivotHasGlass = true;
+                  }
+                });
+
+                // Glass dimensions in world space
+                let grillW: number, grillH: number, grillCX: number, grillCY: number, grillZ: number;
+                if (pivotHasGlass && !pivotGlassBox.isEmpty()) {
+                  const gc = pivotGlassBox.getCenter(new THREE.Vector3());
+                  // Use cell bounds — sized to inner sash opening (~84% width, ~93% height)
+                  grillW = cb.w * 0.84;
+                  grillH = cb.h * 0.93;
+                  grillCX = cb.x;
+                  grillCY = cb.y;
+                  // Recess grills INTO the frame — sit at glass center depth
+                  grillZ = gc.z;
+                } else {
+                  // Fallback: 90% of cell, centered
+                  grillW = cb.w * 0.90;
+                  grillH = cb.h * 0.90;
+                  grillCX = cb.x;
+                  grillCY = cb.y;
+                  grillZ = 0;
+                }
+
+                const cellWInches = currentGrid!.widthInches! / currentGrid!.cols;
+                const cellHInches = currentGrid!.heightInches! / currentGrid!.rows;
+
+                const { group: grillGrp, materials: grillMats } = buildGrillGroup(
+                  grillW, grillH,
+                  matchingCell.grill!,
+                  cellWInches, cellHInches
+                );
+                grillGrp.position.set(grillCX, grillCY, grillZ);
+                windowGroup.add(grillGrp);
+                s.frameMaterials.push(...grillMats);
+              }
+            }
+
+            s.needsRender = true;
+            s.dampingFrames = 30;
+          };
+
+          // Load each component file for this type
+          for (const file of config.files) {
+            const path = config.base + file;
+            if (cacheRef.current[path]) {
+              componentScenes[file] = cacheRef.current[path];
+              loadedCount++;
+              if (loadedCount === config.files.length) assembleForType();
+            } else {
+              loader.load(
+                path,
+                gltf => {
+                  cacheRef.current[path] = gltf.scene;
+                  componentScenes[file] = gltf.scene;
+                  loadedCount++;
+                  if (loadedCount === config.files.length) assembleForType();
+                },
+                undefined,
+                err => {
+                  console.warn(`Component ${file} failed:`, err);
+                  loadedCount++;
+                  if (loadedCount === config.files.length) assembleForType();
+                }
+              );
+            }
+          }
+        }
+      }
+
+
+
+      s.keyLight.castShadow = false;
+      s.renderer.shadowMap.enabled = false;
       s.needsRender = true; s.dampingFrames = 30;
       if (loadingRef.current) { loadingRef.current.style.opacity = '0'; loadingRef.current.style.pointerEvents = 'none'; }
       onLoaded?.();
@@ -476,7 +951,7 @@ export default function WindowViewer({
       model.traverse((child) => {
         if (!(child as THREE.Mesh).isMesh) return;
         const mesh = child as THREE.Mesh;
-        mesh.castShadow = !isHeavy; mesh.receiveShadow = !isHeavy;
+        mesh.castShadow = false; mesh.receiveShadow = false;
         mesh.frustumCulled = true;
         if (mesh.geometry) mesh.geometry.computeBoundingSphere();
 
@@ -531,15 +1006,50 @@ export default function WindowViewer({
         setTimeout(() => { if (loadingRef.current) { loadingRef.current.style.opacity = '0'; loadingRef.current.style.pointerEvents = 'none'; } }, 2000);
       }
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modelPath, typeId, onLoaded, gridKey, interiorColorHex]);
 
-  // ═══ Apply colour changes ═══
+  // ═══ Apply colour changes (exterior only — preserve interior) ═══
   useEffect(() => {
     const s = sceneRef.current;
     if (!s) return;
     const c = new THREE.Color(colour.hex);
-    s.frameMaterials.forEach((m) => { m.color.copy(c); m.needsUpdate = true; });
+    const cDark = c.clone().multiplyScalar(0.88);
+    const extBrightness = c.r * 0.299 + c.g * 0.587 + c.b * 0.114;
+    const isDark = extBrightness < 0.45;
+
+    // 1. Update procedural frame materials (mullions, transoms, splitBars)
+    // frameMaterials order: [0]=exterior frame, [1]=interior, [2]=sash, [3]=meeting rail
+    s.frameMaterials.forEach((m, i) => {
+      if (i === 1) return; // Skip interior material
+      m.color.copy(c);
+      if ('roughness' in m) {
+        m.roughness = isDark ? 0.35 : 0.6;
+        m.metalness = isDark ? 0.15 : 0.0;
+      }
+      m.needsUpdate = true;
+    });
+
+    // 2. Update GLTF model materials (tagged during assembly)
+    if (s.currentModel) {
+      s.currentModel.traverse((child) => {
+        if (!(child as THREE.Mesh).isMesh) return;
+        const mesh = child as THREE.Mesh;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const mat of mats) {
+          const m = mat as THREE.MeshStandardMaterial;
+          if (!m || !m.userData?.colorRole) continue;
+          if (m.userData.colorRole === 'exterior') {
+            m.color.copy(c);
+            m.roughness = isDark ? 0.35 : 0.6;
+            m.metalness = isDark ? 0.15 : 0.0;
+            m.needsUpdate = true;
+          }
+          // Interior and hardware/glass materials are left untouched
+        }
+      });
+    }
+
     s.needsRender = true;
   }, [colour]);
 

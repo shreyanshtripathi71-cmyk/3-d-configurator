@@ -22,17 +22,25 @@ import {
   BRICKMOULD_OPTIONS,
   NAILING_FIN_OPTIONS,
   GLAZING_TYPES,
+  GLASS_THICKNESS_OPTIONS,
   LOW_E_COATINGS,
   GAS_TYPES,
   SPACER_TYPES,
+  SPACER_COLOR_OPTIONS,
   TINT_FROSTING_OPTIONS,
   SECURITY_GLASS_OPTIONS,
-  HARDWARE_TYPES,
+  SASH_SIZE_OPTIONS,
   HARDWARE_COLORS,
   OPENING_DIRECTIONS,
   SCREEN_TYPES,
   SPECIAL_GLAZING_OPTIONS,
+  GRILL_REQUIRE_OPTIONS,
   GRILL_PATTERNS,
+  GRILL_BAR_TYPES,
+  GRILL_BAR_SIZES,
+  GRILL_COLORS,
+  PRAIRIE_H_BAR_LAYOUTS,
+  PRAIRIE_V_BAR_LAYOUTS,
   WINDOW_CONSTRAINTS,
   WINDOW_MODEL_PATHS,
   getWindowTypeOptions,
@@ -107,6 +115,111 @@ function GridIcon({ count, direction }: { count: number; direction: 'vertical' |
   );
 }
 
+/* ─── Grill Pattern SVG Icons ─── */
+function GrillPatternIcon({ pattern }: { pattern: string }) {
+  const s = 50; // viewBox size
+  const p = 6;  // padding
+  const w = s - 2 * p;
+  const h = s - 2 * p;
+
+  return (
+    <svg viewBox={`0 0 ${s} ${s}`} width="44" height="44" fill="none" stroke="#666" strokeWidth="1">
+      <rect x={p} y={p} width={w} height={h} rx="2" strokeWidth="1.5" />
+      {pattern === 'colonial' && (
+        <>
+          <line x1={p + w / 3} y1={p} x2={p + w / 3} y2={p + h} />
+          <line x1={p + 2 * w / 3} y1={p} x2={p + 2 * w / 3} y2={p + h} />
+          <line x1={p} y1={p + h / 3} x2={p + w} y2={p + h / 3} />
+          <line x1={p} y1={p + 2 * h / 3} x2={p + w} y2={p + 2 * h / 3} />
+        </>
+      )}
+      {pattern === 'prairie' && (
+        <>
+          <line x1={p + w * 0.25} y1={p} x2={p + w * 0.25} y2={p + h} />
+          <line x1={p + w * 0.75} y1={p} x2={p + w * 0.75} y2={p + h} />
+          <line x1={p} y1={p + h * 0.25} x2={p + w} y2={p + h * 0.25} />
+          <line x1={p} y1={p + h * 0.75} x2={p + w} y2={p + h * 0.75} />
+        </>
+      )}
+      {pattern === 'ladder' && (
+        <>
+          {/* Horizontal bars only — ladder pattern */}
+          <line x1={p} y1={p + h * 0.2} x2={p + w} y2={p + h * 0.2} />
+          <line x1={p} y1={p + h * 0.4} x2={p + w} y2={p + h * 0.4} />
+          <line x1={p} y1={p + h * 0.6} x2={p + w} y2={p + h * 0.6} />
+          <line x1={p} y1={p + h * 0.8} x2={p + w} y2={p + h * 0.8} />
+        </>
+      )}
+      {pattern === 'diamond' && (
+        <>
+          {/* Diagonal X-crossing bars — diamond pattern */}
+          <line x1={p} y1={p} x2={p + w} y2={p + h} />
+          <line x1={p + w} y1={p} x2={p} y2={p + h} />
+          <line x1={p + w / 2} y1={p} x2={p + w} y2={p + h / 2} />
+          <line x1={p} y1={p + h / 2} x2={p + w / 2} y2={p + h} />
+          <line x1={p + w / 2} y1={p} x2={p} y2={p + h / 2} />
+          <line x1={p + w} y1={p + h / 2} x2={p + w / 2} y2={p + h} />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/* ─── Grill Bar Type SVG Icons ─── */
+function GrillBarTypeIcon({ barType }: { barType: string }) {
+  return (
+    <svg viewBox="0 0 50 50" width="44" height="44" fill="none" stroke="#666" strokeWidth="1">
+      <rect x="6" y="6" width="38" height="38" rx="2" strokeWidth="1.5" />
+      {barType === 'flat' && (
+        <>
+          {/* Thin flat bars */}
+          <line x1="6" y1="25" x2="44" y2="25" strokeWidth="2" />
+          <line x1="25" y1="6" x2="25" y2="44" strokeWidth="2" />
+        </>
+      )}
+      {barType === 'georgian' && (
+        <>
+          {/* Wider bars with edge lines = georgian profile */}
+          <rect x="6" y="22" width="38" height="6" fill="#ddd" stroke="#666" strokeWidth="0.5" />
+          <rect x="22" y="6" width="6" height="38" fill="#ddd" stroke="#666" strokeWidth="0.5" />
+        </>
+      )}
+      {barType === 'pencil' && (
+        <>
+          {/* Thin rounded lines */}
+          <line x1="6" y1="25" x2="44" y2="25" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="25" y1="6" x2="25" y2="44" strokeWidth="1.5" strokeLinecap="round" />
+          {/* Dots to show roundness */}
+          <circle cx="25" cy="25" r="2" fill="#ccc" stroke="#666" strokeWidth="0.5" />
+        </>
+      )}
+      {barType === 'sdl' && (
+        <>
+          {/* Double lines = SDL (bars on both sides of glass) */}
+          <line x1="6" y1="24" x2="44" y2="24" strokeWidth="1.5" />
+          <line x1="6" y1="27" x2="44" y2="27" strokeWidth="1.5" strokeDasharray="2 2" />
+          <line x1="24" y1="6" x2="24" y2="44" strokeWidth="1.5" />
+          <line x1="27" y1="6" x2="27" y2="44" strokeWidth="1.5" strokeDasharray="2 2" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+/* ─── Grill Bar Size Preview Icons ─── */
+function GrillBarSizeIcon({ size }: { size: string }) {
+  const strokeW = size === '5/16' ? 0.8 : size === '5/8' ? 1.8 : 3.0;
+  return (
+    <svg viewBox="0 0 80 60" width="80" height="60" fill="none" stroke="#999" strokeWidth="1">
+      <rect x="4" y="4" width="72" height="52" rx="2" strokeWidth="2" stroke="#bbb" fill="#f5f5f5" />
+      <rect x="10" y="10" width="60" height="40" rx="1" strokeWidth="1" stroke="#ccc" fill="#fafafa" />
+      <line x1="30" y1="10" x2="30" y2="50" strokeWidth={strokeW} stroke="#888" />
+      <line x1="50" y1="10" x2="50" y2="50" strokeWidth={strokeW} stroke="#888" />
+      <line x1="10" y1="23" x2="70" y2="23" strokeWidth={strokeW} stroke="#888" />
+      <line x1="10" y1="37" x2="70" y2="37" strokeWidth={strokeW} stroke="#888" />
+    </svg>
+  );
+}
 
 /* ══════════════════════════════════════════════════════════════
    MAIN CONFIGURATOR PAGE
@@ -134,7 +247,7 @@ export default function ConfiguratorPage() {
   const viewerColour = useMemo<Colour>(() => {
     const map: Record<string, string> = {
       'white-137': 'White', 'almond-532': 'Almond', 'black-525': 'Black',
-      'iron-ore-697': 'Iron Ore', 'commercial-brown-424': 'Brown',
+      'iron-ore-697': 'Iron Ore', 'commercial-brown-424': 'Commercial Brown',
     };
     const name = map[config.exteriorColor] || 'White';
     return COLOURS.find((c) => c.name === name) || COLOURS[0];
@@ -559,10 +672,30 @@ export default function ConfiguratorPage() {
                 cells: config.grid.cells.map(c => ({
                   row: c.row, col: c.col,
                   modelPath: WINDOW_MODEL_PATHS[c.windowType] || windowType.modelPath,
-                  cellType: c.windowType as 'awning' | 'picture' | 'fixed' | 'casement',
+                  cellType: c.windowType as 'awning' | 'picture' | 'fixed' | 'casement' | 'single-hung' | 'double-hung' | 'single-slider' | 'double-slider' | 'end-vent' | 'high-fix' | 'highfix',
+                  grillPattern: c.grillPattern,
+                  grillBarType: c.grillBarType,
+                  grillBarSize: c.grillBarSize,
+                  grillColor: c.grillColor,
+                  grillVertical: c.grillVertical,
+                  grillHorizontal: c.grillHorizontal,
+                  // Prairie-specific
+                  prairieHBarLayout: c.prairieHBarLayout,
+                  prairieVBarLayout: c.prairieVBarLayout,
+                  prairieHBarDaylight: c.prairieHBarDaylight,
+                  prairieVBarDaylight: c.prairieVBarDaylight,
+                  prairieBarSpacing: c.prairieBarSpacing,
+                  prairieLadderHead: c.prairieLadderHead,
+                  prairieLadderSill: c.prairieLadderSill,
+                  prairieLadderLeft: c.prairieLadderLeft,
+                  prairieLadderRight: c.prairieLadderRight,
+                  prairieHSupportBars: c.prairieHSupportBars,
+                  prairieVSupportBars: c.prairieVSupportBars,
+                  ladderBarSpacing: c.ladderBarSpacing,
                 })),
                 selectedCellId: config.selectedCellId,
               }}
+              defaultZoom={8.0}
             />
           </div>
 
@@ -768,6 +901,9 @@ export default function ConfiguratorPage() {
             <ConfigDropdown label="Choose Glazing Type" options={GLAZING_TYPES} value={config.glazingType}
               onChange={(v) => updateConfig({ glazingType: v })} />
             <div style={{ height: 8 }} />
+            <ConfigDropdown label="Glass Thickness" options={GLASS_THICKNESS_OPTIONS} value={config.glassThickness}
+              onChange={(v) => updateConfig({ glassThickness: v })} />
+            <div style={{ height: 8 }} />
             <ConfigDropdown label="1st Pane Low-E Coating" options={LOW_E_COATINGS} value={config.lowECoating1}
               onChange={(v) => updateConfig({ lowECoating1: v })} />
             <div style={{ height: 8 }} />
@@ -779,6 +915,9 @@ export default function ConfiguratorPage() {
             <div style={{ height: 8 }} />
             <ConfigDropdown label="Spacer Type" options={SPACER_TYPES} value={config.spacerType}
               onChange={(v) => updateConfig({ spacerType: v })} />
+            <div style={{ height: 8 }} />
+            <ConfigDropdown label="Spacer Colour" options={SPACER_COLOR_OPTIONS} value={config.spacerColor}
+              onChange={(v) => updateConfig({ spacerColor: v })} showPriceAddon={false} />
             <div style={{ height: 8 }} />
             <ConfigDropdown label="Tint or Frosting?" options={TINT_FROSTING_OPTIONS} value={config.tintFrosting}
               onChange={(v) => updateConfig({ tintFrosting: v })} />
@@ -842,6 +981,15 @@ export default function ConfiguratorPage() {
                   value={selectedCell.windowType}
                   onChange={(v) => updateCell(selectedCell.id, { windowType: v })} showPriceAddon={false} />
 
+                {/* Sash Size (for hung/slider types) */}
+                {['single-hung', 'double-hung'].includes(selectedCell.windowType) && (
+                  <>
+                    <div style={{ height: 8 }} />
+                    <ConfigDropdown label="Sash Size" options={SASH_SIZE_OPTIONS} value={selectedCell.sashSize}
+                      onChange={(v) => updateCell(selectedCell.id, { sashSize: v })} />
+                  </>
+                )}
+
                 {/* Dimension constraints */}
                 {constraints && (
                   <div style={{ marginTop: 12 }}>
@@ -864,13 +1012,10 @@ export default function ConfiguratorPage() {
               </Section>
 
               <Section title="Hardware" defaultOpen={true}>
-                <ConfigDropdown label="Hardware Type" options={HARDWARE_TYPES} value={selectedCell.hardwareType}
-                  onChange={(v) => updateCell(selectedCell.id, { hardwareType: v })} />
-                <div style={{ height: 8 }} />
-                <ConfigDropdown label="Hardware Colour" options={HARDWARE_COLORS} value={selectedCell.hardwareColor}
+                <ConfigDropdown label="Handle & Lock Colour" options={HARDWARE_COLORS} value={selectedCell.hardwareColor}
                   onChange={(v) => updateCell(selectedCell.id, { hardwareColor: v })} />
                 <div style={{ height: 8 }} />
-                {selectedCell.windowType !== 'picture' && (
+                {selectedCell.windowType !== 'picture' && selectedCell.windowType !== 'high-fix' && (
                   <ConfigDropdown label="Opening Direction (Ext. View)" options={OPENING_DIRECTIONS}
                     value={selectedCell.openingDirection}
                     onChange={(v) => updateCell(selectedCell.id, { openingDirection: v })} showPriceAddon={false} />
@@ -892,21 +1037,271 @@ export default function ConfiguratorPage() {
               </Section>
 
               <Section title="Grills" defaultOpen={false}>
-                <ConfigDropdown label="Do you require grills?" options={GRILL_PATTERNS} value={selectedCell.grillPattern}
-                  onChange={(v) => updateCell(selectedCell.id, { grillPattern: v })} />
+                <ConfigDropdown label="Do you require grills?" options={GRILL_REQUIRE_OPTIONS}
+                  value={selectedCell.grillPattern !== 'none' ? 'yes' : 'no'}
+                  onChange={(v) => {
+                    if (v === 'no') {
+                      updateCell(selectedCell.id, { grillPattern: 'none' });
+                    } else {
+                      // Auto-calculate grill line counts based on window dimensions
+                      const cellWidth = config.frameWidth / (config.grid.horizontalCount || 1);
+                      const cellHeight = selectedCell.height || config.frameHeight / (config.grid.verticalCount || 1);
+                      const autoV = Math.max(1, Math.round(cellWidth / 10) - 1);
+                      const autoH = Math.max(1, Math.round(cellHeight / 10) - 1);
+                      updateCell(selectedCell.id, {
+                        grillPattern: 'colonial',
+                        grillVertical: autoV,
+                        grillHorizontal: autoH,
+                      });
+                    }
+                  }} />
                 {selectedCell.grillPattern !== 'none' && (
-                  <div className={styles.grillCountRow}>
-                    <div className={styles.grillCountField}>
-                      <span className={styles.grillCountLabel}>Vertical</span>
-                      <input type="number" className={styles.grillCountInput} value={selectedCell.grillVertical}
-                        onChange={(e) => quickUpdateCell(selectedCell.id, { grillVertical: parseInt(e.target.value) || 1 })} min={1} max={10} />
+                  <>
+                    {/* Grill Pattern */}
+                    <div style={{ height: 8 }} />
+                    <div className={styles.wizardFieldLabel} style={{ marginBottom: 6 }}>Select a grill pattern</div>
+                    <div className={styles.grillPatternGrid}>
+                      {GRILL_PATTERNS.filter(p => p.value !== 'none').map((pat) => (
+                        <button
+                          key={pat.value}
+                          className={`${styles.grillPatternBtn} ${selectedCell.grillPattern === pat.value ? styles.grillPatternBtnActive : ''}`}
+                          onClick={() => {
+                            const updates: Record<string, any> = { grillPattern: pat.value };
+                            if (pat.value === 'prairie') {
+                              updates.prairieHBarLayout = 'top-and-bottom';
+                              updates.prairieVBarLayout = 'left-and-right';
+                              updates.prairieHBarDaylight = 5.0;
+                              updates.prairieVBarDaylight = 5.0;
+                              updates.prairieBarSpacing = 5;
+                              updates.prairieLadderHead = 0;
+                              updates.prairieLadderSill = 0;
+                              updates.prairieLadderLeft = 0;
+                              updates.prairieLadderRight = 0;
+                              updates.prairieHSupportBars = 0;
+                              updates.prairieVSupportBars = 0;
+                            }
+                            if (pat.value === 'ladder') {
+                              updates.grillHorizontal = 1;
+                              updates.grillVertical = 4;
+                              updates.ladderBarSpacing = 20;
+                            }
+                            if (pat.value === 'diamond') {
+                              updates.grillHorizontal = 4;
+                              updates.grillVertical = 4;
+                            }
+                            updateCell(selectedCell.id, updates);
+                          }}
+                          title={pat.description || pat.label}
+                          type="button"
+                        >
+                          <GrillPatternIcon pattern={pat.value} />
+                          <span>{pat.label}</span>
+                        </button>
+                      ))}
                     </div>
-                    <div className={styles.grillCountField}>
-                      <span className={styles.grillCountLabel}>Horizontal</span>
-                      <input type="number" className={styles.grillCountInput} value={selectedCell.grillHorizontal}
-                        onChange={(e) => quickUpdateCell(selectedCell.id, { grillHorizontal: parseInt(e.target.value) || 1 })} min={1} max={10} />
+
+                    {/* Grill Bar Type */}
+                    <div style={{ height: 12 }} />
+                    <div className={styles.wizardFieldLabel} style={{ marginBottom: 6 }}>Select a grill bar type</div>
+                    <div className={styles.grillPatternGrid}>
+                      {GRILL_BAR_TYPES.map((bt) => (
+                        <button
+                          key={bt.value}
+                          className={`${styles.grillPatternBtn} ${selectedCell.grillBarType === bt.value ? styles.grillPatternBtnActive : ''}`}
+                          onClick={() => updateCell(selectedCell.id, { grillBarType: bt.value })}
+                          title={bt.description || bt.label}
+                          type="button"
+                        >
+                          <GrillBarTypeIcon barType={bt.value} />
+                          <span>{bt.label}</span>
+                        </button>
+                      ))}
                     </div>
-                  </div>
+
+                    {/* Grill Bar Size — visual card selector like panes.com */}
+                    <div style={{ height: 12 }} />
+                    <div className={styles.wizardFieldLabel} style={{ marginBottom: 6 }}>Select a grill bar size</div>
+                    <div className={styles.grillSizeGrid}>
+                      {GRILL_BAR_SIZES.map((sz) => (
+                        <button
+                          key={sz.value}
+                          className={`${styles.grillSizeBtn} ${selectedCell.grillBarSize === sz.value ? styles.grillSizeBtnActive : ''}`}
+                          onClick={() => updateCell(selectedCell.id, { grillBarSize: sz.value })}
+                          title={sz.description || sz.label}
+                          type="button"
+                        >
+                          <GrillBarSizeIcon size={sz.value} />
+                          <div className={styles.grillSizeLabel}>{sz.label}</div>
+                          {sz.priceAddon ? (
+                            <div className={styles.grillSizePrice}>+ ${sz.priceAddon.toFixed(2)}</div>
+                          ) : null}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Grill Colour */}
+                    <div style={{ height: 8 }} />
+                    <ConfigDropdown label="Select a grill colour" options={GRILL_COLORS}
+                      value={selectedCell.grillColor}
+                      onChange={(v) => updateCell(selectedCell.id, { grillColor: v })} />
+
+                    {/* Horizontal Lines & Vertical Lines — for colonial/ladder/diamond */}
+                    {(selectedCell.grillPattern === 'colonial' || selectedCell.grillPattern === 'ladder' || selectedCell.grillPattern === 'diamond') && (
+                      <>
+                        <div style={{ height: 12 }} />
+                        <div className={styles.grillCountRow}>
+                          <div className={styles.grillCountField}>
+                            <label>{selectedCell.grillPattern === 'diamond' ? 'Horizontal Points' : 'Horizontal Lines'}</label>
+                            <input type="number" min={1} max={10}
+                              key={`hl-${selectedCell.id}-${selectedCell.grillHorizontal}`}
+                              defaultValue={selectedCell.grillHorizontal}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => quickUpdateCell(selectedCell.id, { grillHorizontal: parseInt(e.target.value) || 1 })}
+                              onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { grillHorizontal: parseInt(e.target.value) || 1 }); }} />
+                          </div>
+                          <div className={styles.grillCountField}>
+                            <label>{selectedCell.grillPattern === 'diamond' ? 'Vertical Points' : 'Vertical Lines'}</label>
+                            <input type="number" min={1} max={10}
+                              key={`vl-${selectedCell.id}-${selectedCell.grillVertical}`}
+                              defaultValue={selectedCell.grillVertical}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => quickUpdateCell(selectedCell.id, { grillVertical: parseInt(e.target.value) || 1 })}
+                              onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { grillVertical: parseInt(e.target.value) || 1 }); }} />
+                          </div>
+                        </div>
+                        {/* Grille Bar Spacing — ladder only */}
+                        {selectedCell.grillPattern === 'ladder' && (
+                          <>
+                            <div style={{ height: 8 }} />
+                            <div className={styles.grillCountRow}>
+                              <div className={styles.grillCountField} style={{ flex: 1 }}>
+                                <label>Grille Bar Spacing</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <input type="number" min={4} max={40} step={1}
+                                    key={`lbs-${selectedCell.id}-${selectedCell.ladderBarSpacing}`}
+                                    defaultValue={selectedCell.ladderBarSpacing}
+                                    onFocus={(e) => e.target.select()}
+                                    onBlur={(e) => quickUpdateCell(selectedCell.id, { ladderBarSpacing: parseInt(e.target.value) || 16 })}
+                                    onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { ladderBarSpacing: parseInt(e.target.value) || 16 }); }}
+                                    style={{ width: '70px' }} />
+                                  <span style={{ fontSize: 12, color: '#888' }}>Inches</span>
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </>
+                    )}
+
+                    {/* Prairie-specific controls */}
+                    {selectedCell.grillPattern === 'prairie' && (
+                      <>
+                        <div style={{ height: 12 }} />
+                        <ConfigDropdown label="Horizontal Bar Layout" options={PRAIRIE_H_BAR_LAYOUTS}
+                          value={selectedCell.prairieHBarLayout}
+                          onChange={(v) => updateCell(selectedCell.id, { prairieHBarLayout: v })} />
+                        <div style={{ height: 8 }} />
+                        <ConfigDropdown label="Vertical Bar Layout" options={PRAIRIE_V_BAR_LAYOUTS}
+                          value={selectedCell.prairieVBarLayout}
+                          onChange={(v) => updateCell(selectedCell.id, { prairieVBarLayout: v })} />
+
+                        <div style={{ height: 12 }} />
+                        <div className={styles.grillCountRow}>
+                          <div className={styles.grillCountField}>
+                            <label>Horizontal Support Bars</label>
+                            <input type="number" min={0} max={10}
+                              key={`hsb-${selectedCell.id}-${selectedCell.prairieHSupportBars}`}
+                              defaultValue={selectedCell.prairieHSupportBars}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => quickUpdateCell(selectedCell.id, { prairieHSupportBars: parseInt(e.target.value) || 0 })}
+                              onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { prairieHSupportBars: parseInt(e.target.value) || 0 }); }} />
+                          </div>
+                          <div className={styles.grillCountField}>
+                            <label>Vertical Support Bars</label>
+                            <input type="number" min={0} max={10}
+                              key={`vsb-${selectedCell.id}-${selectedCell.prairieVSupportBars}`}
+                              defaultValue={selectedCell.prairieVSupportBars}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => quickUpdateCell(selectedCell.id, { prairieVSupportBars: parseInt(e.target.value) || 0 })}
+                              onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { prairieVSupportBars: parseInt(e.target.value) || 0 }); }} />
+                          </div>
+                        </div>
+
+                        <div style={{ height: 8 }} />
+                        <div className={styles.grillCountRow}>
+                          <div className={styles.grillCountField}>
+                            <label>H Bar Daylight</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <input type="number" min={1} max={20} step={0.5}
+                                key={`hbd-${selectedCell.id}-${selectedCell.prairieHBarDaylight}`}
+                                defaultValue={selectedCell.prairieHBarDaylight}
+                                onFocus={(e) => e.target.select()}
+                                onBlur={(e) => quickUpdateCell(selectedCell.id, { prairieHBarDaylight: parseFloat(e.target.value) || 3.5 })}
+                                onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { prairieHBarDaylight: parseFloat(e.target.value) || 3.5 }); }}
+                                style={{ width: '70px' }} />
+                              <span style={{ fontSize: 12, color: '#888' }}>Inches</span>
+                            </div>
+                          </div>
+                          <div className={styles.grillCountField}>
+                            <label>V Bar Daylight</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <input type="number" min={1} max={20} step={0.5}
+                                key={`vbd-${selectedCell.id}-${selectedCell.prairieVBarDaylight}`}
+                                defaultValue={selectedCell.prairieVBarDaylight}
+                                onFocus={(e) => e.target.select()}
+                                onBlur={(e) => quickUpdateCell(selectedCell.id, { prairieVBarDaylight: parseFloat(e.target.value) || 3.5 })}
+                                onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { prairieVBarDaylight: parseFloat(e.target.value) || 3.5 }); }}
+                                style={{ width: '70px' }} />
+                              <span style={{ fontSize: 12, color: '#888' }}>Inches</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ height: 8 }} />
+                        <div className={styles.grillCountRow}>
+                          <div className={styles.grillCountField}>
+                            <label>Ladder Count Head</label>
+                            <input type="number" min={0} max={10}
+                              key={`lh-${selectedCell.id}-${selectedCell.prairieLadderHead}`}
+                              defaultValue={selectedCell.prairieLadderHead}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => quickUpdateCell(selectedCell.id, { prairieLadderHead: parseInt(e.target.value) || 0 })}
+                              onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { prairieLadderHead: parseInt(e.target.value) || 0 }); }} />
+                          </div>
+                          <div className={styles.grillCountField}>
+                            <label>Ladder Count Sill</label>
+                            <input type="number" min={0} max={10}
+                              key={`ls-${selectedCell.id}-${selectedCell.prairieLadderSill}`}
+                              defaultValue={selectedCell.prairieLadderSill}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => quickUpdateCell(selectedCell.id, { prairieLadderSill: parseInt(e.target.value) || 0 })}
+                              onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { prairieLadderSill: parseInt(e.target.value) || 0 }); }} />
+                          </div>
+                        </div>
+                        <div style={{ height: 4 }} />
+                        <div className={styles.grillCountRow}>
+                          <div className={styles.grillCountField}>
+                            <label>Ladder Count Left</label>
+                            <input type="number" min={0} max={10}
+                              key={`ll-${selectedCell.id}-${selectedCell.prairieLadderLeft}`}
+                              defaultValue={selectedCell.prairieLadderLeft}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => quickUpdateCell(selectedCell.id, { prairieLadderLeft: parseInt(e.target.value) || 0 })}
+                              onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { prairieLadderLeft: parseInt(e.target.value) || 0 }); }} />
+                          </div>
+                          <div className={styles.grillCountField}>
+                            <label>Ladder Count Right</label>
+                            <input type="number" min={0} max={10}
+                              key={`lr-${selectedCell.id}-${selectedCell.prairieLadderRight}`}
+                              defaultValue={selectedCell.prairieLadderRight}
+                              onFocus={(e) => e.target.select()}
+                              onBlur={(e) => quickUpdateCell(selectedCell.id, { prairieLadderRight: parseInt(e.target.value) || 0 })}
+                              onChange={(e) => { if (e.target.value !== '') quickUpdateCell(selectedCell.id, { prairieLadderRight: parseInt(e.target.value) || 0 }); }} />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </>
                 )}
               </Section>
             </>

@@ -1,3 +1,8 @@
+/* ══════════════════════════════════════════════════════════════
+   PRODUCT DETAIL PAGE — Exact panes.com parity
+   Layout: two-column hero → full-width description/specs/reviews
+   ══════════════════════════════════════════════════════════════ */
+
 /* ══════ Top Announcement Bar ══════ */
 .topBar {
   background: #2563a8;
@@ -21,29 +26,34 @@
 .breadcrumb a:hover { text-decoration: underline; }
 .sep { margin: 0 4px; color: #999; }
 
-/* ══════ Product Page — two columns ══════ */
-.productPage {
-  max-width: 1200px;
+/* ══════════════════════════════════════════════
+   HERO SECTION — two columns (viewer + info)
+   panes.com: viewer ~35%, info ~65%
+   ══════════════════════════════════════════════ */
+.heroSection {
+  max-width: 100%;
   margin: 0 auto;
-  padding: 40px 40px 60px;
+  padding: 40px 80px 32px;
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: 520px 1fr;
   gap: 60px;
   align-items: start;
   background: #fff;
-  min-height: 80vh;
 }
 
 /* ══════ LEFT COLUMN: Viewer ══════ */
 .viewerCol {
   position: sticky;
   top: 20px;
+  min-width: 0;
 }
 
 .viewerWrap {
   position: relative;
   background: transparent;
   border: none;
+  max-height: calc(100vh - 350px);
+  aspect-ratio: 1/1;
 }
 .viewerWrap.fullscreen {
   position: fixed;
@@ -87,7 +97,7 @@
 .controlsRow {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 4px;
   padding: 20px 0 8px;
 }
@@ -134,6 +144,7 @@
   color: #999;
   font-style: italic;
   padding: 6px 0 0;
+  text-align: center;
 }
 
 /* ══════ RIGHT COLUMN: Product Info (CENTERED) ══════ */
@@ -187,7 +198,7 @@
 .buttons {
   display: flex;
   gap: 16px;
-  margin-bottom: 40px;
+  margin-bottom: 0;
 }
 
 .btnBlack,
@@ -215,57 +226,100 @@
 }
 .btnBlue:hover { background: #24508f; }
 
+
+/* ══════════════════════════════════════════════
+   FULL-WIDTH CONTENT SECTIONS (below the hero)
+   panes.com: description, specs, reviews all full-width
+   ══════════════════════════════════════════════ */
+.contentArea {
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 0 80px 60px;
+  background: #fff;
+}
+
 /* ── Description Section ── */
-.typeSection {
+.descSection {
   text-align: center;
-  margin-bottom: 16px;
-  padding-top: 10px;
+  padding-top: 32px;
   border-top: 1px solid #eee;
 }
-.typeSectionTitle {
+.descTitle {
   font-size: 22px;
   font-weight: 400;
   color: #111;
   margin-bottom: 8px;
 }
-.typeSectionSub {
+.descSub {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 2px;
   color: #888;
   text-transform: uppercase;
+  margin-bottom: 20px;
 }
 
 .descriptionText {
   font-size: 14px;
   line-height: 1.7;
   color: #555;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+/* Callout box — panes.com has a bordered highlight box */
+.calloutBox {
+  border: 1px solid #ddd;
+  padding: 20px 24px;
   margin-bottom: 32px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #444;
+}
+.calloutBox p {
+  margin: 0 0 8px;
+}
+.calloutBox p:last-child {
+  margin-bottom: 0;
+}
+.calloutLink {
+  color: #2563a8;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* ── Specs Section ── */
 .specsSection {
   margin-bottom: 32px;
   border-top: 1px solid #eee;
-  padding-top: 20px;
+  padding-top: 24px;
+  text-align: center;
 }
 .specsSectionTitle {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 2px;
-  color: #888;
+  color: #111;
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
+  font-size: 20px;
+  letter-spacing: 1px;
 }
 .specsList {
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.9;
   color: #555;
-  padding-left: 20px;
+  padding-left: 24px;
+  text-align: left;
 }
 .specsList li { margin-bottom: 2px; }
+.specsList li ul {
+  list-style-type: circle;
+  padding-left: 24px;
+  margin-top: 2px;
+}
 
-/* ── Window Type Selector ── */
+/* ── Window Type Selector (kept same) ── */
 .windowTypeSection {
   border-top: 1px solid #eee;
   padding-top: 20px;
@@ -278,12 +332,15 @@
   letter-spacing: 1.5px;
   color: #999;
   margin-bottom: 14px;
+  text-align: center;
 }
 
 .windowTypeGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .wtBtn {
@@ -329,11 +386,14 @@
   letter-spacing: 1.5px;
   color: #999;
   margin-bottom: 14px;
+  text-align: center;
 }
 .featuresGrid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
 }
 .featureCard {
   background: #fff;
@@ -349,6 +409,143 @@
 }
 .featIcon { font-size: 28px; margin-bottom: 8px; }
 .featLabel { font-size: 11px; font-weight: 600; color: #555; }
+
+/* ── Q&A Section ── */
+.qaSection {
+  border-top: 1px solid #eee;
+  padding-top: 24px;
+  margin-bottom: 32px;
+  text-align: center;
+}
+.qaSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.qaEmpty {
+  font-size: 13px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Reviews Section ── */
+.reviewsSection {
+  border-top: 1px solid #eee;
+  padding: 32px 0;
+  text-align: center;
+}
+.reviewsIcon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+.reviewsSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #888;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  font-size: 18px;
+}
+.reviewsSubtitle {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 16px;
+}
+.addReviewBtn {
+  display: inline-block;
+  padding: 12px 28px;
+  background: #222;
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 24px;
+  transition: background 0.15s;
+}
+.addReviewBtn:hover { background: #444; }
+
+.reviewsStars {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.reviewsCount {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+}
+
+.ratingBars {
+  max-width: 400px;
+  margin: 0 auto 20px;
+}
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+.ratingStars {
+  display: flex;
+  gap: 1px;
+  flex-shrink: 0;
+  width: 90px;
+}
+.ratingBar {
+  flex: 1;
+  height: 16px;
+  background: #f0f0e0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ratingBarFill {
+  height: 100%;
+  background: #e8d84c;
+  border-radius: 2px;
+}
+.ratingRowCount {
+  font-size: 13px;
+  color: #555;
+  width: 20px;
+  text-align: right;
+}
+
+.noReviews {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+}
+.beFirstBtn {
+  display: inline-block;
+  padding: 12px 28px;
+  background: #222;
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: background 0.15s;
+}
+.beFirstBtn:hover { background: #444; }
+
 
 /* ══════ Bottom CTA ══════ */
 .bottomCta {
@@ -387,13 +584,16 @@
 
 /* ══════ Responsive ══════ */
 @media (max-width: 960px) {
-  .productPage {
+  .heroSection {
     grid-template-columns: 1fr;
     gap: 30px;
     padding: 20px;
   }
   .viewerCol { position: static; }
   .buttons { flex-direction: column; }
+  .contentArea { padding: 0 20px 40px; }
+  .windowTypeGrid { grid-template-columns: repeat(2, 1fr); }
+  .featuresGrid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 600px) {
@@ -402,4 +602,6 @@
   .featuresGrid { grid-template-columns: 1fr 1fr; }
   .topBar { font-size: 11px; padding: 8px 15px; }
   .breadcrumb { padding: 10px 15px; }
+  .heroSection { padding: 16px; gap: 20px; }
+  .contentArea { padding: 0 16px 32px; }
 }

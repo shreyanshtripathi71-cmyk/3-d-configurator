@@ -17,6 +17,7 @@ export interface WindowCell {
   row: number;       // 0-indexed
   col: number;       // 0-indexed
   windowType: string;
+  sashSize: string;
   height: number;    // individual height for this row
   hardwareType: string;
   hardwareColor: string;
@@ -24,9 +25,26 @@ export interface WindowCell {
   screenType: string;
   egressHardware: boolean;
   specialGlazing: string;
-  grillPattern: string;
-  grillVertical: number;
-  grillHorizontal: number;
+  grillPattern: string;     // 'none' | 'colonial' | 'prairie' | etc.
+  grillBarType: string;     // 'flat' | 'georgian' | 'pencil' | 'sdl'
+  grillBarSize: string;     // '11/16' | '1'
+  grillColor: string;       // 'white' | 'match-interior' | 'match-exterior'
+  grillVertical: number;    // vertical bar count (for colonial)
+  grillHorizontal: number;  // horizontal bar count (for colonial)
+  // Prairie-specific options
+  prairieHBarLayout: string;  // 'top-and-bottom' | 'top-only' | 'bottom-only' | 'centered' | 'none'
+  prairieVBarLayout: string;  // 'left-and-right' | 'left-only' | 'right-only' | 'centered' | 'none'
+  prairieHBarDaylight: number; // distance from edge in inches
+  prairieVBarDaylight: number; // distance from edge in inches
+  prairieBarSpacing: number;   // grille bar spacing in inches
+  prairieLadderHead: number;   // ladder rungs at top
+  prairieLadderSill: number;   // ladder rungs at bottom
+  prairieLadderLeft: number;   // ladder rungs at left
+  prairieLadderRight: number;  // ladder rungs at right
+  prairieHSupportBars: number; // horizontal support bars
+  prairieVSupportBars: number; // vertical support bars
+  // Ladder-specific
+  ladderBarSpacing: number;    // grille bar spacing in inches (distance from top)
 }
 
 /* ─── Per-row config (panes.com: each row can have different horizontal count) ─── */
@@ -50,36 +68,38 @@ export type WizardStep = 'dimensions' | 'vertical' | 'horizontal' | 'done';
 export interface ConfigState {
   // Wizard
   wizardStep: WizardStep;
-  
+
   // Dimensions (whole opening)
   measurementType: string;
   frameWidth: number;
   frameHeight: number;
-  
+
   // Grid
   grid: GridConfig;
   selectedCellId: string; // which cell is being edited
-  
+
   // Whole Opening (shared across all cells)
   exteriorColor: string;
   interiorColor: string;
   addFoam: boolean;
   brickmould: string;
   nailingFin: string;
-  
+
   // Glass Options (shared)
   glazingType: string;
+  glassThickness: string;
   lowECoating1: string;
   lowECoating2: string;
   gasType: string;
   spacerType: string;
+  spacerColor: string;
   tintFrosting: string;
   securityGlass: string;
-  
+
   // Interior Options (shared)
   interiorJamb: boolean;
   interiorReturns: boolean;
-  
+
   // Cart
   description: string;
   quantity: number;
@@ -94,28 +114,28 @@ export interface DimensionConstraints {
 }
 
 export const WINDOW_CONSTRAINTS: Record<string, DimensionConstraints> = {
-  awning:        { minWidth: 19.125, maxWidth: 72, minHeight: 12, maxHeight: 68 },
-  casement:      { minWidth: 14,     maxWidth: 36, minHeight: 24, maxHeight: 72 },
-  picture:       { minWidth: 12,     maxWidth: 96, minHeight: 12, maxHeight: 96 },
-  'high-fix':    { minWidth: 12,     maxWidth: 96, minHeight: 12, maxHeight: 96 },
-  'single-hung': { minWidth: 19.5,   maxWidth: 44, minHeight: 30, maxHeight: 72 },
-  'double-hung': { minWidth: 19.5,   maxWidth: 44, minHeight: 30, maxHeight: 72 },
-  'single-slider': { minWidth: 36,   maxWidth: 72, minHeight: 18, maxHeight: 60 },
-  'double-slider': { minWidth: 48,   maxWidth: 96, minHeight: 18, maxHeight: 60 },
-  'end-vent':    { minWidth: 48,     maxWidth: 96, minHeight: 18, maxHeight: 60 },
+  awning: { minWidth: 19.125, maxWidth: 72, minHeight: 12, maxHeight: 68 },
+  casement: { minWidth: 14, maxWidth: 36, minHeight: 24, maxHeight: 72 },
+  picture: { minWidth: 12, maxWidth: 96, minHeight: 12, maxHeight: 96 },
+  'high-fix': { minWidth: 12, maxWidth: 96, minHeight: 12, maxHeight: 96 },
+  'single-hung': { minWidth: 19.5, maxWidth: 44, minHeight: 30, maxHeight: 72 },
+  'double-hung': { minWidth: 19.5, maxWidth: 44, minHeight: 30, maxHeight: 72 },
+  'single-slider': { minWidth: 36, maxWidth: 72, minHeight: 18, maxHeight: 60 },
+  'double-slider': { minWidth: 48, maxWidth: 96, minHeight: 18, maxHeight: 60 },
+  'end-vent': { minWidth: 48, maxWidth: 96, minHeight: 18, maxHeight: 60 },
 };
 
 /* ─── Model paths per window type ─── */
 export const WINDOW_MODEL_PATHS: Record<string, string> = {
-  awning:        '/windows/awning/AwningWindow.gltf',
-  casement:      '/windows/casement/CasementWindow.gltf',
-  picture:       '/windows/picture/PictureWindow_Model_1.gltf',
-  'high-fix':    '/windows/high-fix/HighFixWindow_DoubleGlazing.gltf',
+  awning: '/windows/awning/AwningWindow.gltf',
+  casement: '/windows/casement/CasementWindow.gltf',
+  picture: '/windows/picture/PictureWindow_Model_1.gltf',
+  'high-fix': '/windows/high-fix/HighFixWindow_DoubleGlazing.gltf',
   'single-hung': '/windows/single-hung/SingleHungWindow_optimized.glb',
   'double-hung': '/windows/double-hung/DoubleHungWindow_optimized.glb',
   'single-slider': '/windows/single-slider/SingleSliderWindow_optimized.glb',
   'double-slider': '/windows/double-slider/DoubleSliderWindow_optimized.glb',
-  'end-vent':    '/windows/end-vent/End Vent Slider Window_Model_1_optimized.glb',
+  'end-vent': '/windows/end-vent/End Vent Slider Window_Model_1_optimized.glb',
 };
 
 /* ─── Helper: Create a default WindowCell ─── */
@@ -124,22 +144,43 @@ export function createDefaultCell(
   col: number,
   windowType: string,
   height: number,
+  colsInRow: number, // total columns in this row (for reversed numbering)
 ): WindowCell {
+  // Panes.com: W1.1 = rightmost cell, numbering goes right-to-left
+  const reversedCol = colsInRow - col;
   return {
-    id: `W${row + 1}.${col + 1}`,
+    id: `W${row + 1}.${reversedCol}`,
     row,
     col,
     windowType,
+    sashSize: 'even-split',
     height,
     hardwareType: 'premium-classic',
-    hardwareColor: 'white',
+    hardwareColor: 'white-137',
     openingDirection: windowType === 'picture' || windowType === 'high-fix' ? 'fixed' : 'right',
     screenType: 'regular',
     egressHardware: false,
     specialGlazing: 'default',
     grillPattern: 'none',
-    grillVertical: 1,
-    grillHorizontal: 1,
+    grillBarType: 'flat',
+    grillBarSize: '5/16',
+    grillColor: 'white',
+    grillVertical: Math.max(1, Math.round(height * (colsInRow || 1) / 12)),
+    grillHorizontal: Math.max(1, Math.round(height / 12)),
+    // Prairie defaults
+    prairieHBarLayout: 'top-and-bottom',
+    prairieVBarLayout: 'left-and-right',
+    prairieHBarDaylight: 5.0,
+    prairieVBarDaylight: 5.0,
+    prairieBarSpacing: 5,
+    prairieLadderHead: 0,
+    prairieLadderSill: 0,
+    prairieLadderLeft: 0,
+    prairieLadderRight: 0,
+    prairieHSupportBars: 0,
+    prairieVSupportBars: 0,
+    // Ladder defaults
+    ladderBarSpacing: 16,
   };
 }
 
@@ -153,21 +194,19 @@ export function buildGridCells(
 ): WindowCell[] {
   const rowHeight = Math.round((totalHeight / verticalCount) * 1000) / 1000;
   const cells: WindowCell[] = [];
-  
+
   for (let r = 0; r < verticalCount; r++) {
     // Per-row column count (from rowConfigs or default)
     const rowCfg = rowConfigs?.find(rc => rc.row === r);
     const colsForRow = rowCfg ? rowCfg.horizontalCount : horizontalCount;
-    
+
     for (let c = 0; c < colsForRow; c++) {
-      // Panes.com: only W1.1 (row 0, last col) = awning, everything else = picture
-      // W1.1 in panes = bottom-right = row 0, col (colsForRow-1)
-      const isW1_1 = (r === 0 && c === colsForRow - 1);
-      const cellType = isW1_1 ? baseWindowType : 'picture';
-      cells.push(createDefaultCell(r, c, cellType, rowHeight));
+      // Panes.com: bottom row (row 0) = base window type, upper rows = picture
+      const cellType = r === 0 ? baseWindowType : 'picture';
+      cells.push(createDefaultCell(r, c, cellType, rowHeight, colsForRow));
     }
   }
-  
+
   return cells;
 }
 
@@ -181,16 +220,18 @@ export function buildDefaultRowConfigs(verticalCount: number, defaultHorizontal:
 
 /* ─── Helper: Max vertical count based on height (smart constraint) ─── */
 export function getMaxVertical(frameHeight: number): number {
-  // Minimum ~12 inches per row (panes.com logic)
+  // Minimum 24 inches per row — ensures each window cell has reasonable proportions
+  // and the GLTF model doesn't get distorted from extreme scaling
   if (frameHeight <= 0) return 1;
-  const max = Math.floor(frameHeight / 12);
+  const max = Math.floor(frameHeight / 24);
   return Math.max(1, Math.min(4, max));
 }
 
 /* ─── Helper: Max horizontal count based on width ─── */
 export function getMaxHorizontal(frameWidth: number): number {
+  // Minimum 18 inches per column — ensures each window cell has reasonable proportions
   if (frameWidth <= 0) return 1;
-  const max = Math.floor(frameWidth / 12);
+  const max = Math.floor(frameWidth / 18);
   return Math.max(1, Math.min(4, max));
 }
 
@@ -209,10 +250,9 @@ export function rebuildRowCells(
   // Build new cells for this row
   const newRowCells: WindowCell[] = [];
   for (let c = 0; c < newHorizontalCount; c++) {
-    // W1.1 (row 0, last col) = base type, everything else = picture
-    const isW1_1 = (row === 0 && c === newHorizontalCount - 1);
-    const cellType = isW1_1 ? baseWindowType : 'picture';
-    newRowCells.push(createDefaultCell(row, c, cellType, rowHeight));
+    // Bottom row (row 0) = base type, upper rows = picture
+    const cellType = row === 0 ? baseWindowType : 'picture';
+    newRowCells.push(createDefaultCell(row, c, cellType, rowHeight, newHorizontalCount));
   }
   // Merge and sort: other rows + this row's new cells
   return [...otherCells, ...newRowCells].sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col);
@@ -222,11 +262,11 @@ export function rebuildRowCells(
 export function createDefaultConfig(windowType: string): ConfigState {
   return {
     wizardStep: 'dimensions',
-    
+
     measurementType: 'frame-size',
     frameWidth: 0,
     frameHeight: 0,
-    
+
     grid: {
       verticalCount: 1,
       horizontalCount: 1,
@@ -234,24 +274,26 @@ export function createDefaultConfig(windowType: string): ConfigState {
       cells: [],
     },
     selectedCellId: 'W1.1',
-    
+
     exteriorColor: 'white-137',
     interiorColor: 'white-137',
     addFoam: false,
     brickmould: 'none',
     nailingFin: 'none',
-    
+
     glazingType: 'double-pane',
+    glassThickness: '3mm',
     lowECoating1: 'climaguard-80-70',
     lowECoating2: 'none',
     gasType: 'argon',
     spacerType: 'warm-edge',
+    spacerColor: 'black',
     tintFrosting: 'none',
     securityGlass: 'none',
-    
+
     interiorJamb: false,
     interiorReturns: false,
-    
+
     description: '',
     quantity: 1,
   };
@@ -275,13 +317,15 @@ export const FRAME_COLORS: ConfigOption[] = [
 
 export const BRICKMOULD_OPTIONS: ConfigOption[] = [
   { value: 'none', label: 'No Brickmould', priceAddon: 0 },
-  { value: '2-inch', label: '2" Brickmould', priceAddon: 18.50 },
-  { value: '3-inch', label: '3" Brickmould', priceAddon: 24.00 },
+  { value: '1.5-inch', label: '1-1/2" Brickmould', priceAddon: 15.00 },
+  { value: '1.75-inch', label: '1-3/4" Brickmould', priceAddon: 18.50 },
+  { value: '2.5-inch', label: '2-1/2" Brickmould', priceAddon: 24.00 },
+  { value: '4-inch', label: '4" Brickmould', priceAddon: 32.00 },
 ];
 
 export const NAILING_FIN_OPTIONS: ConfigOption[] = [
-  { value: 'none', label: 'No Nailing Fin', priceAddon: 0 },
-  { value: 'snap-in', label: 'Snap-in Nailing Fin', priceAddon: 12.00 },
+  { value: 'no', label: 'No', priceAddon: 0 },
+  { value: 'yes', label: 'Yes', priceAddon: 6.64 },
 ];
 
 export const GLAZING_TYPES: ConfigOption[] = [
@@ -308,18 +352,27 @@ export const SPACER_TYPES: ConfigOption[] = [
   { value: 'super-spacer', label: 'Super Spacer', priceAddon: 12.00 },
 ];
 
+export const GLASS_THICKNESS_OPTIONS: ConfigOption[] = [
+  { value: '3mm', label: '3mm', priceAddon: 0, description: 'Standard' },
+  { value: '4mm', label: '4mm', priceAddon: 8.50 },
+  { value: '5mm', label: '5mm', priceAddon: 15.00 },
+];
+
 export const TINT_FROSTING_OPTIONS: ConfigOption[] = [
-  { value: 'none', label: 'No Tint or Frosting', priceAddon: 0 },
-  { value: 'grey-tint', label: 'Grey Tint', priceAddon: 28.00 },
+  { value: 'none', label: 'None', priceAddon: 0 },
   { value: 'bronze-tint', label: 'Bronze Tint', priceAddon: 28.00 },
-  { value: 'frosted', label: 'Frosted / Obscure', priceAddon: 35.00 },
-  { value: 'rain-glass', label: 'Rain Glass', priceAddon: 42.00 },
+  { value: 'grey-tint', label: 'Grey Tint', priceAddon: 28.00 },
+  { value: 'frosted', label: 'Frost', priceAddon: 35.00 },
 ];
 
 export const SECURITY_GLASS_OPTIONS: ConfigOption[] = [
-  { value: 'none', label: 'No Security Glass', priceAddon: 0 },
-  { value: 'tempered', label: 'Tempered Glass', priceAddon: 45.00 },
-  { value: 'laminated', label: 'Laminated Glass', priceAddon: 65.00 },
+  { value: 'none', label: 'None', priceAddon: 0 },
+  { value: 'laminated', label: 'Laminated', priceAddon: 65.00 },
+];
+
+export const SPACER_COLOR_OPTIONS: ConfigOption[] = [
+  { value: 'black', label: 'Black', priceAddon: 0 },
+  { value: 'grey', label: 'Grey', priceAddon: 0 },
 ];
 
 /* ─── Per-Cell Options ─── */
@@ -342,15 +395,16 @@ export function getWindowTypeOptions(baseType: string): ConfigOption[] {
   }
 }
 
-export const HARDWARE_TYPES: ConfigOption[] = [
-  { value: 'premium-classic', label: 'Premium Classic', priceAddon: 0 },
-  { value: 'slimline', label: 'Slimline', priceAddon: 15.00 },
+export const SASH_SIZE_OPTIONS: ConfigOption[] = [
+  { value: 'even-split', label: 'Even Split', priceAddon: 0, description: 'Standard' },
+  { value: 'oriole-split', label: 'Oriole Split', priceAddon: 13.29 },
+  { value: 'cottage-split', label: 'Cottage Split', priceAddon: 13.29 },
 ];
 
 export const HARDWARE_COLORS: ConfigOption[] = [
-  { value: 'white', label: 'White', icon: '⬜', priceAddon: 0 },
+  { value: 'white-137', label: 'White 137', icon: '⬜', priceAddon: 0 },
+  { value: 'almond', label: 'Almond', icon: '🟫', priceAddon: 0 },
   { value: 'black', label: 'Black', icon: '⬛', priceAddon: 8.00 },
-  { value: 'brushed-nickel', label: 'Brushed Nickel', icon: '🔘', priceAddon: 48.75 },
 ];
 
 export const OPENING_DIRECTIONS: ConfigOption[] = [
@@ -360,24 +414,68 @@ export const OPENING_DIRECTIONS: ConfigOption[] = [
 ];
 
 export const SCREEN_TYPES: ConfigOption[] = [
-  { value: 'none', label: 'No Screen', priceAddon: 0 },
   { value: 'regular', label: 'Regular Screen', priceAddon: 0, description: 'Standard' },
-  { value: 'bettervue', label: 'BetterVue Screen', priceAddon: 25.00 },
+  { value: 'heavy-duty', label: 'Heavy Duty Screen', priceAddon: 6.64 },
+  { value: 'none', label: 'No Screen', priceAddon: -1.33 },
 ];
 
 export const SPECIAL_GLAZING_OPTIONS: ConfigOption[] = [
   { value: 'default', label: 'Default Glazing', priceAddon: 0 },
-  { value: 'noise-reduction', label: 'Noise Reduction', priceAddon: 55.00 },
-  { value: 'impact-resistant', label: 'Impact Resistant', priceAddon: 85.00 },
+  { value: 'tempered-both', label: '3mm Tempered - Both Panes', priceAddon: 15.94 },
+];
+
+export const GRILL_REQUIRE_OPTIONS: ConfigOption[] = [
+  { value: 'no', label: 'No', priceAddon: 0 },
+  { value: 'yes', label: 'Yes', priceAddon: 0 },
 ];
 
 export const GRILL_PATTERNS: ConfigOption[] = [
-  { value: 'none', label: 'No Grills', priceAddon: 0 },
-  { value: 'colonial', label: 'Colonial', priceAddon: 32.00 },
-  { value: 'prairie', label: 'Prairie', priceAddon: 32.00 },
-  { value: 'georgian', label: 'Georgian', priceAddon: 38.00 },
-  { value: 'sdl', label: 'SDL (Simulated Divided Lite)', priceAddon: 55.00 },
+  { value: 'none', label: 'No', icon: '⊠', priceAddon: 0 },
+  { value: 'colonial', label: 'Colonial', icon: '▦', priceAddon: 0, description: 'Evenly-spaced grid pattern' },
+  { value: 'prairie', label: 'Prairie', icon: '⊞', priceAddon: 0, description: 'Perimeter bars with open center' },
+  { value: 'ladder', label: 'Ladder', icon: '☰', priceAddon: 0, description: 'Horizontal bars only' },
+  { value: 'diamond', label: 'Diamond', icon: '◇', priceAddon: 0, description: 'Diagonal crossing bars' },
 ];
+
+export const GRILL_BAR_TYPES: ConfigOption[] = [
+  { value: 'georgian', label: 'Georgian', priceAddon: 0, description: 'Standard profile bar' },
+  { value: 'flat', label: 'Flat', priceAddon: -79.49, description: 'Flat profile bar' },
+  { value: 'pencil', label: 'Pencil', priceAddon: 42.01, description: 'Thin rounded profile' },
+  { value: 'sdl', label: 'SDL', priceAddon: 308.45, description: 'Simulated Divided Lite — bars on both sides of glass' },
+];
+
+export const GRILL_BAR_SIZES: ConfigOption[] = [
+  { value: '5/16', label: '5/16"', priceAddon: 370.05, description: 'Thinnest profile' },
+  { value: '5/8', label: '5/8"', priceAddon: 370.05, description: 'Medium profile' },
+  { value: '1', label: '1"', priceAddon: 370.05, description: 'Standard width' },
+];
+
+export const GRILL_COLORS: ConfigOption[] = [
+  { value: 'white', label: 'White', priceAddon: 0 },
+  { value: 'brass', label: 'Brass', priceAddon: 120.67 },
+  { value: 'pewter', label: 'Pewter', priceAddon: 120.67 },
+  { value: 'black', label: 'Black', priceAddon: 120.67 },
+];
+
+/* ─── Prairie-specific layout options ─── */
+export const PRAIRIE_H_BAR_LAYOUTS: ConfigOption[] = [
+  { value: 'top-and-bottom', label: 'Top & Bottom' },
+  { value: 'top-only', label: 'Top Only' },
+  { value: 'bottom-only', label: 'Bottom Only' },
+  { value: 'centered', label: 'Centered' },
+  { value: 'none', label: 'None' },
+];
+
+export const PRAIRIE_V_BAR_LAYOUTS: ConfigOption[] = [
+  { value: 'left-and-right', label: 'Left & Right' },
+  { value: 'left-only', label: 'Left Only' },
+  { value: 'right-only', label: 'Right Only' },
+  { value: 'centered', label: 'Centered' },
+  { value: 'none', label: 'None' },
+];
+
+/* Legacy — kept for backward compat */
+export const GRILL_PATTERN_TYPES = GRILL_PATTERNS;
 
 /* ─── Energy Ratings ─── */
 export interface EnergyRatings {
@@ -398,7 +496,7 @@ export function computeEnergyRatings(config: ConfigState, cell: WindowCell): Ene
   let vt = 0.52;
   let uFactorIP = 1.53;
   let uFactorSI = 0.27;
-  
+
   if (config.glazingType === 'triple-pane') {
     er = 42; shgc = 0.28; vt = 0.40; uFactorIP = 1.05; uFactorSI = 0.19;
   }
@@ -441,31 +539,33 @@ export function calculatePrice(
 ): { total: number; breakdown: PriceBreakdownItem[] } {
   const breakdown: PriceBreakdownItem[] = [];
   const cellCount = config.grid.cells.length || 1;
-  
+
   // Base price per cell
   breakdown.push({ label: `Base Window Price (×${cellCount})`, amount: Math.round(basePrice * cellCount * 100) / 100 });
-  
+
   // Size adjustment
   const sizeMultiplier = (config.frameWidth * config.frameHeight) / (35 * 35);
   if (sizeMultiplier > 1) {
     const sizeAddon = basePrice * (sizeMultiplier - 1) * 0.3;
     breakdown.push({ label: 'Size Adjustment', amount: Math.round(sizeAddon * 100) / 100 });
   }
-  
+
   // Shared options  
   const extColor = FRAME_COLORS.find(c => c.value === config.exteriorColor);
   if (extColor?.priceAddon) breakdown.push({ label: `Exterior: ${extColor.label}`, amount: extColor.priceAddon * cellCount });
   const intColor = FRAME_COLORS.find(c => c.value === config.interiorColor);
   if (intColor?.priceAddon) breakdown.push({ label: `Interior: ${intColor.label}`, amount: intColor.priceAddon * cellCount });
   if (config.addFoam) breakdown.push({ label: 'Foam Injection', amount: 22.00 * cellCount });
-  
+
   const brick = BRICKMOULD_OPTIONS.find(b => b.value === config.brickmould);
   if (brick?.priceAddon) breakdown.push({ label: `Brickmould`, amount: brick.priceAddon });
   const nail = NAILING_FIN_OPTIONS.find(n => n.value === config.nailingFin);
   if (nail?.priceAddon) breakdown.push({ label: `Nailing Fin`, amount: nail.priceAddon });
-  
+
   const glaze = GLAZING_TYPES.find(g => g.value === config.glazingType);
   if (glaze?.priceAddon) breakdown.push({ label: `Triple Pane`, amount: glaze.priceAddon * cellCount });
+  const glass = GLASS_THICKNESS_OPTIONS.find(g => g.value === config.glassThickness);
+  if (glass?.priceAddon) breakdown.push({ label: `Glass: ${glass.label}`, amount: glass.priceAddon * cellCount });
   const lowe1 = LOW_E_COATINGS.find(l => l.value === config.lowECoating1);
   if (lowe1?.priceAddon) breakdown.push({ label: `Low-E: ${lowe1.label}`, amount: lowe1.priceAddon * cellCount });
   const lowe2 = LOW_E_COATINGS.find(l => l.value === config.lowECoating2);
@@ -476,23 +576,31 @@ export function calculatePrice(
   if (tint?.priceAddon) breakdown.push({ label: `Tint: ${tint.label}`, amount: tint.priceAddon * cellCount });
   const sec = SECURITY_GLASS_OPTIONS.find(s => s.value === config.securityGlass);
   if (sec?.priceAddon) breakdown.push({ label: `Security Glass`, amount: sec.priceAddon * cellCount });
-  
+
   // Per-cell options
   for (const cell of config.grid.cells) {
     const prefix = cellCount > 1 ? `${cell.id} ` : '';
-    const hw = HARDWARE_TYPES.find(h => h.value === cell.hardwareType);
-    if (hw?.priceAddon) breakdown.push({ label: `${prefix}Hardware`, amount: hw.priceAddon });
+    const sash = SASH_SIZE_OPTIONS.find(s => s.value === cell.sashSize);
+    if (sash?.priceAddon) breakdown.push({ label: `${prefix}Sash: ${sash.label}`, amount: sash.priceAddon });
     const hwc = HARDWARE_COLORS.find(h => h.value === cell.hardwareColor);
-    if (hwc?.priceAddon) breakdown.push({ label: `${prefix}Hardware Color`, amount: hwc.priceAddon });
+    if (hwc?.priceAddon) breakdown.push({ label: `${prefix}Handle & Lock`, amount: hwc.priceAddon });
     const scr = SCREEN_TYPES.find(s => s.value === cell.screenType);
-    if (scr?.priceAddon) breakdown.push({ label: `${prefix}Screen`, amount: scr.priceAddon });
+    if (scr && scr.priceAddon !== 0) breakdown.push({ label: `${prefix}Screen`, amount: scr.priceAddon! });
     const spec = SPECIAL_GLAZING_OPTIONS.find(s => s.value === cell.specialGlazing);
     if (spec?.priceAddon) breakdown.push({ label: `${prefix}Special Glazing`, amount: spec.priceAddon });
     if (cell.egressHardware) breakdown.push({ label: `${prefix}Egress Hardware`, amount: 18.00 });
-    const grill = GRILL_PATTERNS.find(g => g.value === cell.grillPattern);
-    if (grill?.priceAddon) breakdown.push({ label: `${prefix}Grills`, amount: grill.priceAddon });
+    if (cell.grillPattern && cell.grillPattern !== 'none') {
+      const grillPat = GRILL_PATTERNS.find(g => g.value === cell.grillPattern);
+      if (grillPat?.priceAddon) breakdown.push({ label: `${prefix}Grills (${grillPat.label})`, amount: grillPat.priceAddon });
+      const grillBar = GRILL_BAR_TYPES.find(g => g.value === cell.grillBarType);
+      if (grillBar && grillBar.priceAddon !== undefined && grillBar.priceAddon !== 0) breakdown.push({ label: `${prefix}Grill Bar: ${grillBar.label}`, amount: grillBar.priceAddon });
+      const grillSize = GRILL_BAR_SIZES.find(g => g.value === cell.grillBarSize);
+      if (grillSize?.priceAddon) breakdown.push({ label: `${prefix}Grill Bar Size: ${grillSize.label}`, amount: grillSize.priceAddon });
+      const grillCol = GRILL_COLORS.find(g => g.value === cell.grillColor);
+      if (grillCol?.priceAddon) breakdown.push({ label: `${prefix}Grill Color: ${grillCol.label}`, amount: grillCol.priceAddon });
+    }
   }
-  
+
   const total = Math.round(breakdown.reduce((sum, item) => sum + item.amount, 0) * 100) / 100;
   return { total, breakdown };
 }

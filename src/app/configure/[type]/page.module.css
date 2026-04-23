@@ -151,9 +151,10 @@
 
 
 /* ─── CONFIGURATOR: Viewer + Right Area ─── */
+/* Panes.com layout: ~35% viewer | ~65% config panels */
 .configurator {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: minmax(340px, 1fr) 2fr;
   gap: 0;
   min-height: calc(100vh - 130px);
   background: #fff;
@@ -163,7 +164,7 @@
 .viewerColumn {
   position: sticky;
   top: 60px;
-  height: calc(100vh - 130px);
+  height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
   border-right: 1px solid #eee;
@@ -203,6 +204,7 @@
 .controlsBar {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 8px 12px;
   border-top: 1px solid #eee;
@@ -240,7 +242,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  max-height: calc(100vh - 130px);
+  max-height: calc(100vh - 60px);
 }
 
 /* Full-width section (Window Configuration) */
@@ -469,24 +471,64 @@
 
 
 /* ─── Grills ─── */
+.grillPatternGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.grillPatternBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  border: 1.5px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 11px;
+  font-weight: 500;
+  color: #555;
+  text-align: center;
+  line-height: 1.2;
+}
+.grillPatternBtn:hover {
+  border-color: #999;
+  background: #f7f7fa;
+}
+.grillPatternBtnActive {
+  border-color: #333 !important;
+  background: #f0f4ff !important;
+  color: #222;
+  box-shadow: 0 0 0 1px #333;
+}
+.grillPatternBtn svg {
+  flex-shrink: 0;
+}
+
 .grillCountRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin-top: 12px;
+  margin-top: 8px;
 }
 .grillCountField {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.grillCountLabel {
+.grillCountField label {
   font-size: 11px;
-  color: #888;
+  color: #666;
   margin-bottom: 4px;
   text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
-.grillCountInput {
+.grillCountField input,
+.grillCountField select {
   width: 100%;
   padding: 8px 12px;
   border: 1px solid #ddd;
@@ -496,8 +538,60 @@
   color: #333;
   font-family: inherit;
   background: #fff;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23666'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px;
 }
-.grillCountInput:focus { outline: none; border-color: #4a7cff; }
+.grillCountField input:focus,
+.grillCountField select:focus {
+  outline: none;
+  border-color: #4a7cff;
+}
+
+/* ── Grill Bar Size visual cards (panes.com reference) ── */
+.grillSizeGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.grillSizeBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px 8px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.grillSizeBtn:hover {
+  border-color: #999;
+  background: #f7f7fa;
+}
+.grillSizeBtnActive {
+  border-color: #333 !important;
+  background: #f0f4ff !important;
+  box-shadow: 0 0 0 1px #333;
+}
+.grillSizeLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin-top: 2px;
+}
+.grillSizePrice {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+}
 
 
 /* ═══════════════════════════════════════════════════
@@ -893,7 +987,7 @@
 /* ─── Responsive ─── */
 @media (max-width: 1200px) {
   .configurator {
-    grid-template-columns: 300px 1fr 1fr;
+    grid-template-columns: minmax(400px, 2fr) 3fr;
   }
   .wizardLayout {
     grid-template-columns: 1fr;
@@ -913,9 +1007,13 @@
   .viewerColumn {
     position: relative;
     top: auto;
-    height: 350px;
+    height: 50vh;
+    min-height: 400px;
     border-right: none;
     border-bottom: 1px solid #eee;
+  }
+  .rightArea {
+    max-height: none;
   }
   .centerColumn, .rightColumn {
     max-height: none;
