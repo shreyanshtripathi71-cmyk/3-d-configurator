@@ -46,7 +46,7 @@ export const WINDOW_TYPES: WindowType[] = [
     id: 'awning',
     label: 'Awning',
     icon: '🏠',
-    modelPath: '/windows/awning/AwningWindow.gltf',
+    modelPath: '/windows/awning/AwningWindow.glb',
     price: '$447.82',
     priceNum: 447.82,
     dimensions: { width: '35"', height: '35"' },

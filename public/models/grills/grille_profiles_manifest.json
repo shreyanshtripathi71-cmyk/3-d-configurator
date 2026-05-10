@@ -1,0 +1,122 @@
+{
+  "source": "grilles.fbx",
+  "description": "Grille bar profiles (pencil, flat, SDL, georgian)",
+  "meshes": [
+    {
+      "name": "arrow",
+      "vertices": 5554,
+      "polygons": 5552,
+      "has_shape_keys": false
+    },
+    {
+      "name": "back",
+      "vertices": 104,
+      "polygons": 102,
+      "has_shape_keys": false
+    },
+    {
+      "name": "back_2",
+      "vertices": 104,
+      "polygons": 102,
+      "has_shape_keys": false
+    },
+    {
+      "name": "back_3",
+      "vertices": 104,
+      "polygons": 102,
+      "has_shape_keys": false
+    },
+    {
+      "name": "back_4",
+      "vertices": 104,
+      "polygons": 102,
+      "has_shape_keys": false
+    },
+    {
+      "name": "c10",
+      "vertices": 76,
+      "polygons": 43,
+      "has_shape_keys": false
+    },
+    {
+      "name": "c15",
+      "vertices": 76,
+      "polygons": 43,
+      "has_shape_keys": false
+    },
+    {
+      "name": "c30",
+      "vertices": 76,
+      "polygons": 43,
+      "has_shape_keys": false
+    },
+    {
+      "name": "c45",
+      "vertices": 76,
+      "polygons": 43,
+      "has_shape_keys": false
+    },
+    {
+      "name": "front",
+      "vertices": 104,
+      "polygons": 102,
+      "has_shape_keys": false
+    },
+    {
+      "name": "front_2",
+      "vertices": 104,
+      "polygons": 102,
+      "has_shape_keys": false
+    },
+    {
+      "name": "front_3",
+      "vertices": 104,
+      "polygons": 102,
+      "has_shape_keys": false
+    },
+    {
+      "name": "front_4",
+      "vertices": 104,
+      "polygons": 102,
+      "has_shape_keys": false
+    },
+    {
+      "name": "georgian1",
+      "vertices": 576,
+      "polygons": 1152,
+      "has_shape_keys": false
+    },
+    {
+      "name": "georgian1116",
+      "vertices": 576,
+      "polygons": 1152,
+      "has_shape_keys": false
+    },
+    {
+      "name": "line",
+      "vertices": 112,
+      "polygons": 224,
+      "has_shape_keys": false
+    },
+    {
+      "name": "pencil",
+      "vertices": 112,
+      "polygons": 224,
+      "has_shape_keys": false
+    },
+    {
+      "name": "sdl2",
+      "vertices": 388,
+      "polygons": 780,
+      "has_shape_keys": false
+    },
+    {
+      "name": "sdl78",
+      "vertices": 246,
+      "polygons": 492,
+      "has_shape_keys": false
+    }
+  ],
+  "output_file": "/Users/shreyansh8722/Downloads/3-d-configurator/public/models/grills/grille_profiles.glb",
+  "output_size_kb": 65.3
+}

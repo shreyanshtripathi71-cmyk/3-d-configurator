@@ -127,8 +127,8 @@ export const WINDOW_CONSTRAINTS: Record<string, DimensionConstraints> = {
 
 /* ─── Model paths per window type ─── */
 export const WINDOW_MODEL_PATHS: Record<string, string> = {
-  awning: '/windows/awning/AwningWindow.gltf',
-  casement: '/windows/casement/CasementWindow.gltf',
+  awning: '/windows/awning/AwningWindow.glb',
+  casement: '/windows/casement/Casement.glb',
   picture: '/windows/picture/PictureWindow_Model_1.gltf',
   'high-fix': '/windows/high-fix/HighFixWindow_DoubleGlazing.gltf',
   'single-hung': '/windows/single-hung/SingleHungWindow_optimized.glb',
@@ -201,9 +201,10 @@ export function buildGridCells(
     const colsForRow = rowCfg ? rowCfg.horizontalCount : horizontalCount;
 
     for (let c = 0; c < colsForRow; c++) {
-      // Panes.com: bottom row (row 0) = base window type, upper rows = picture
-      const cellType = r === 0 ? baseWindowType : 'picture';
-      cells.push(createDefaultCell(r, c, cellType, rowHeight, colsForRow));
+      // Default every cell to the dealer's chosen window type. They can
+      // still flip individual cells to picture / etc. in the Cell tab if
+      // they want a transom layout — but the default isn't surprising.
+      cells.push(createDefaultCell(r, c, baseWindowType, rowHeight, colsForRow));
     }
   }
 
@@ -211,10 +212,17 @@ export function buildGridCells(
 }
 
 /* ─── Helper: Build default rowConfigs ─── */
-export function buildDefaultRowConfigs(verticalCount: number, defaultHorizontal: number): RowConfig[] {
+// Every row defaults to the same column count the dealer picked in the
+// wizard. The caller can still override per-row afterwards if they want
+// a different layout for a transom row.
+export function buildDefaultRowConfigs(
+  verticalCount: number,
+  baseHorizontal: number,
+  upperHorizontal: number = baseHorizontal,
+): RowConfig[] {
   return Array.from({ length: verticalCount }, (_, r) => ({
     row: r,
-    horizontalCount: defaultHorizontal,
+    horizontalCount: r === 0 ? baseHorizontal : upperHorizontal,
   }));
 }
 
@@ -235,6 +243,16 @@ export function getMaxHorizontal(frameWidth: number): number {
   return Math.max(1, Math.min(4, max));
 }
 
+/* ─── Helper: Min horizontal count based on type + width ─── */
+// Casement is sold in pairs whenever the opening is wide enough to fit
+// two sashes — single-sash casements wider than ~20" are not a real
+// product (operable sash gets too heavy + visually too thin a meeting
+// rail). Mirror this constraint in the wizard + post-wizard dropdowns.
+export function getMinHorizontal(frameWidth: number, typeId: string): number {
+  if (typeId === 'casement' && frameWidth > 20) return 2;
+  return 1;
+}
+
 /* ─── Helper: Rebuild cells for a single row when its horizontal count changes ─── */
 export function rebuildRowCells(
   existingCells: WindowCell[],
@@ -247,12 +265,11 @@ export function rebuildRowCells(
   const rowHeight = Math.round((totalHeight / verticalCount) * 1000) / 1000;
   // Keep cells from other rows
   const otherCells = existingCells.filter(c => c.row !== row);
-  // Build new cells for this row
+  // Build new cells for this row — all cells default to the chosen
+  // base window type. Dealers can change per-cell in the Cell tab.
   const newRowCells: WindowCell[] = [];
   for (let c = 0; c < newHorizontalCount; c++) {
-    // Bottom row (row 0) = base type, upper rows = picture
-    const cellType = row === 0 ? baseWindowType : 'picture';
-    newRowCells.push(createDefaultCell(row, c, cellType, rowHeight, newHorizontalCount));
+    newRowCells.push(createDefaultCell(row, c, baseWindowType, rowHeight, newHorizontalCount));
   }
   // Merge and sort: other rows + this row's new cells
   return [...otherCells, ...newRowCells].sort((a, b) => a.row !== b.row ? a.row - b.row : a.col - b.col);

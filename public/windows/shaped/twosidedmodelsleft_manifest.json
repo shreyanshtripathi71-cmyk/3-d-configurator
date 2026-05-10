@@ -1,0 +1,56 @@
+{
+  "source": "twosidedmodelsleft.fbx",
+  "description": "Partial Ellipse Left, Raised Partial Ellipse Left, Raised Partial Chord Left",
+  "meshes": [
+    {
+      "name": "Shaped_Between_2",
+      "vertices": 1260,
+      "polygons": 1062,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Between_3",
+      "vertices": 2633,
+      "polygons": 2124,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Glass_2",
+      "vertices": 246,
+      "polygons": 234,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Glass_3",
+      "vertices": 360,
+      "polygons": 346,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Keeper_2",
+      "vertices": 2400,
+      "polygons": 2301,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Keeper_3",
+      "vertices": 2460,
+      "polygons": 2360,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Window_Exterior",
+      "vertices": 12152,
+      "polygons": 11505,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Window_Interior",
+      "vertices": 4092,
+      "polygons": 3835,
+      "has_shape_keys": false
+    }
+  ],
+  "output_file": "/Users/shreyansh8722/Downloads/3-d-configurator/public/windows/shaped/twosidedmodelsleft.glb",
+  "output_size_kb": 147.7
+}

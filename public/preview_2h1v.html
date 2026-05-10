@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Casement 2H1V Preview</title>
+<style>
+  body { margin: 0; background: #f0f0f0; font-family: system-ui; }
+  #info { position: absolute; top: 10px; left: 10px; color: #333; background: rgba(255,255,255,0.9); padding: 12px 18px; border-radius: 8px; font-size: 14px; z-index: 10; }
+</style>
+</head>
+<body>
+<div id="info">Loading Casement 2H×1V...</div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf5f5f5);
+
+const camera = new THREE.PerspectiveCamera(35, window.innerWidth/window.innerHeight, 0.01, 100);
+camera.position.set(0, 0.3, 4.5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.4;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.12;
+
+// Lighting matching the configurator
+scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+const hemi = new THREE.HemisphereLight(0xffffff, 0xe8e8e8, 0.5);
+hemi.position.set(0, 10, 0);
+scene.add(hemi);
+const key = new THREE.DirectionalLight(0xffffff, 0.8);
+key.position.set(2, 6, 5);
+scene.add(key);
+const fill = new THREE.DirectionalLight(0xffffff, 0.5);
+fill.position.set(-4, 4, -2);
+scene.add(fill);
+const front = new THREE.DirectionalLight(0xffffff, 0.6);
+front.position.set(0, 0, 10);
+scene.add(front);
+const rim = new THREE.DirectionalLight(0xffffff, 0.3);
+rim.position.set(0, 2, -6);
+scene.add(rim);
+
+const loader = new GLTFLoader();
+loader.load('/windows/casement/Casement_2H1V.glb', (gltf) => {
+  const model = gltf.scene;
+  
+  // Apply white frame color like the configurator
+  model.traverse(c => {
+    if (!c.isMesh) return;
+    const mat = c.material;
+    if (mat.metalness > 0.5) return; // keep hardware dark
+    if (mat.transparent || mat.opacity < 0.9) return; // keep glass
+    // Frame pieces — set to white
+    c.material = new THREE.MeshPhysicalMaterial({
+      color: new THREE.Color(0.93, 0.93, 0.91),
+      roughness: 0.4,
+      metalness: 0.0,
+      envMapIntensity: 0.4,
+      clearcoat: 0.05,
+    });
+  });
+  
+  scene.add(model);
+  
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  controls.target.copy(center);
+  
+  document.getElementById('info').textContent = 
+    `Casement 2H×1V | Size: ${size.x.toFixed(3)} × ${size.y.toFixed(3)} × ${size.z.toFixed(3)} | 6 meshes from original model`;
+}, 
+(progress) => {
+  if (progress.total) {
+    const pct = Math.round(progress.loaded / progress.total * 100);
+    document.getElementById('info').textContent = `Loading... ${pct}%`;
+  }
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "newkore-dev",
+      "runtimeExecutable": "/Users/rafi/.local/node/bin/node",
+      "runtimeArgs": ["/Users/rafi/Desktop/Newkore Website/node_modules/.bin/next", "dev", "--port", "3002"],
+      "port": 3002,
+      "env": {
+        "PATH": "/Users/rafi/.local/node/bin:/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "source": "casement.fbx",
+  "description": "Casement with morph targets from new engine",
+  "meshes": [
+    {
+      "name": "Between_2",
+      "vertices": 108,
+      "polygons": 108,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Between_3",
+      "vertices": 216,
+      "polygons": 216,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Glass_2",
+      "vertices": 16,
+      "polygons": 12,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Glass_3",
+      "vertices": 24,
+      "polygons": 18,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Handle_Center",
+      "vertices": 3572,
+      "polygons": 3530,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Handle_Left",
+      "vertices": 3572,
+      "polygons": 3530,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Handle_Right",
+      "vertices": 3572,
+      "polygons": 3530,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Keeper_2",
+      "vertices": 356,
+      "polygons": 356,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Keeper_3",
+      "vertices": 264,
+      "polygons": 264,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Lock_Left",
+      "vertices": 3231,
+      "polygons": 3216,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Lock_Right",
+      "vertices": 3231,
+      "polygons": 3216,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Washer_2",
+      "vertices": 32,
+      "polygons": 32,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Washer_3",
+      "vertices": 32,
+      "polygons": 32,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Washer_Window",
+      "vertices": 52,
+      "polygons": 48,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Window_Exterior",
+      "vertices": 824,
+      "polygons": 816,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Window_Interior",
+      "vertices": 412,
+      "polygons": 404,
+      "has_shape_keys": false
+    }
+  ],
+  "output_file": "/Users/shreyansh8722/Downloads/3-d-configurator/public/windows/shaped/casement_morphs.glb",
+  "output_size_kb": 178.0
+}

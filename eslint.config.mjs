@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Reference materials (not part of the app):
+    "openspec-handoff/**",
+    "openspec-standalone.html",
+    "blender/**",
+    "scripts/**",
   ]),
 ]);
 

@@ -1,0 +1,56 @@
+{
+  "source": "closedmodels.fbx",
+  "description": "Ellipse, Raised Segment, Raised Gothic shaped windows",
+  "meshes": [
+    {
+      "name": "Shaped_Between_2",
+      "vertices": 2436,
+      "polygons": 2070,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Between_3",
+      "vertices": 5102,
+      "polygons": 4140,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Glass_2",
+      "vertices": 492,
+      "polygons": 480,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Glass_3",
+      "vertices": 721,
+      "polygons": 703,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Keeper_2",
+      "vertices": 4640,
+      "polygons": 4485,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Keeper_3",
+      "vertices": 4756,
+      "polygons": 4600,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Window_Exterior",
+      "vertices": 22736,
+      "polygons": 22425,
+      "has_shape_keys": false
+    },
+    {
+      "name": "Shaped_Window_Interior",
+      "vertices": 7656,
+      "polygons": 7475,
+      "has_shape_keys": false
+    }
+  ],
+  "output_file": "/Users/shreyansh8722/Downloads/3-d-configurator/public/windows/shaped/closedmodels.glb",
+  "output_size_kb": 235.5
+}

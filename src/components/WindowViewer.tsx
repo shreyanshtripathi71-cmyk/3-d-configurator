@@ -4,6 +4,7 @@ import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import type { Colour } from '@/data/windows';
 import { HEAVY_MODELS } from '@/data/windows';
@@ -393,9 +394,12 @@ export default function WindowViewer({
     const dimLineMat = new THREE.LineBasicMaterial({ color: 0x888888, linewidth: 1 });
     const makeLine = (pts: THREE.Vector3[]) => new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), dimLineMat);
 
-    const addDimLines = (target: THREE.Group, dimGroup: THREE.Group) => {
+    const addDimLines = (target: THREE.Group, dimGroup: THREE.Group, explicitBounds?: THREE.Box3) => {
       if (!dimensionsRef.current) return;
-      const fb = new THREE.Box3().setFromObject(target);
+      // Skinned meshes report their REST-pose bounding box from setFromObject,
+      // which won't match the post-skinning silhouette. Allow the caller to
+      // pass the true deformed bounds when it knows them.
+      const fb = explicitBounds ?? new THREE.Box3().setFromObject(target);
       const mn = fb.min, mx = fb.max;
       const off = 0.15, tk = 0.08;
 
@@ -442,6 +446,644 @@ export default function WindowViewer({
       if (loadingRef.current) { loadingRef.current.style.opacity = '0'; loadingRef.current.style.pointerEvents = 'none'; }
       onLoaded?.();
     };
+
+    /* ═══════════════════════════════════════════
+       RIGGED 9-SLICE  (casement / awning / future operable types)
+       ═══════════════════════════════════════════
+       Each rigged source GLB has 4 corner control bones
+       (Ctrl_Down_Left/Right, Ctrl_Top_Left/Right). Frame edge
+       vertices are weighted to slide between adjacent corner bones
+       (no stretch), so the frame profile thickness stays CONSTANT
+       at any window size. Only the glass (centre, bilinear weights)
+       actually scales. Handle is anchored to the left frame bones.
+
+       For multi-cell grids, each cell is an independent skinned
+       clone. Adjacent cells are placed so their frame edges touch —
+       this matches `blender/generate_casement_2h1v.py` where the
+       touching frames naturally form the centre mullion.
+    */
+    // Per-type rigged sources — every rig must share the same 4-bone
+    // control armature (Ctrl_Down_Left/Right, Ctrl_Top_Left/Right) and
+    // be authored at the same native width (0.7621 m) so the uniform
+    // clone-scale math below works uniformly. New types just need an
+    // entry here once their *_Rigged_v2.glb is produced by the
+    // matching scripts/rig_<type>_v2.py.
+    // Cache-bust query string — bump this whenever a *_Rigged_v2.glb is
+    // regenerated so browsers refetch instead of serving stale assets.
+    const RIG_VERSION = 'v5';
+    const withVer = (p: string) => `${p}?${RIG_VERSION}`;
+
+    // Casement now uses the artist-delivered Casement.glb (Maya rig with
+    // _JT bone suffixes, mesh authored in inches). Other types keep the
+    // procedural *_Rigged_v2.glb rigs (meter-based). Both naming
+    // conventions and bind-pose styles are handled below.
+    const RIGGED_SOURCE_BY_TYPE: Record<string, string> = {
+      casement: '/windows/casement/Casement.glb',
+      awning: '/windows/awning/AwningWindow_Rigged_v2.glb',
+      picture: '/windows/picture/PictureWindow_Rigged_v2.glb',
+      'high-fix': '/windows/high-fix/HighFixWindow_Rigged_v2.glb',
+      highfix: '/windows/high-fix/HighFixWindow_Rigged_v2.glb',
+      fixed: '/windows/picture/FixedWindow_Rigged_v2.glb',
+    };
+
+    // Rigs whose meshes & bones are authored directly in INCHES. For these
+    // we skip the meter-based TARGET_FRAME_INCHES rescale and bind bones
+    // straight from the rig's inverseBindMatrices (Maya leaves bone
+    // local-positions at the origin and encodes the rest pose in IBMs).
+    const INCH_BASED_RIG_PATHS = new Set<string>([
+      '/windows/casement/Casement.glb',
+    ]);
+    if (RIGGED_SOURCE_BY_TYPE[typeId] && useProcedural && currentGrid) {
+      const baseRigPathRaw = RIGGED_SOURCE_BY_TYPE[typeId];
+      const SOURCE_RIGGED = withVer(baseRigPathRaw);
+      const isInchBaseRig = INCH_BASED_RIG_PATHS.has(baseRigPathRaw);
+      // Upper rows in a vertical stack render as fixed panes. Preferred
+      // source is the picture-window rig (purpose-built for fixed panes,
+      // slimmer profile). For INCH-based bases (Casement.glb) we reuse
+      // the base rig with hardware hidden — the procedural picture rig
+      // is meter-based, mixing units would mis-scale the upper cells.
+      const PICTURE_RIGGED = withVer('/windows/picture/PictureWindow_Rigged_v2.glb');
+      const UPPER_RIGGED = isInchBaseRig ? SOURCE_RIGGED : PICTURE_RIGGED;
+      const userW = currentGrid.widthInches!;
+      const userH = currentGrid.heightInches!;
+      const rows = currentGrid.rows;
+      const cols = currentGrid.cols;
+      const rowColCounts = currentGrid.rowColCounts;
+      const getRowCols = (r: number) => rowColCounts?.[r] ?? cols;
+
+      // Native frame zone fraction for the casement rig (FT_X in
+      // scripts/rig_casement_v2.py). Used to derive the uniform clone scale
+      // that pins the casement frame profile to TARGET_FRAME_INCHES.
+      const NATIVE_FRAME_RATIO_X = 0.12;
+      // Equivalent ratio for the artist Maya casement (Casement.glb): the
+      // glass starts ~6.83" in from each edge of a 37" rig, so the frame
+      // zone is ~18.5% of native width. Hardcoded because IBM-derived
+      // glass bounds aren't computed up here and this value is stable
+      // for the artist deliverable.
+      const INCH_RIG_FRAME_RATIO_X = 0.185;
+      // Real-world inch thickness we want the casement frame profile to read as.
+      // Constant in inches → varies in scene units only with overall window
+      // size (panes.com behaviour: bigger windows have proportionally thinner-
+      // looking frames). The picture rig uses the SAME clone scale so its
+      // own (thinner) FT_X automatically yields a slimmer frame in scene.
+      const TARGET_FRAME_INCHES = 3.0;
+
+      // Build (or reuse) the shared exterior/interior materials so colour
+      // updates from the picker propagate to every casement AND picture cell.
+      const exteriorColor = new THREE.Color(colourRef.current.hex);
+      const extBrightness = exteriorColor.r * 0.299 + exteriorColor.g * 0.587 + exteriorColor.b * 0.114;
+      const isDarkExterior = extBrightness < 0.45;
+      const interiorCol = interiorColorHex
+        ? new THREE.Color(interiorColorHex)
+        : new THREE.Color(0.92, 0.92, 0.91);
+
+      const extMat = new THREE.MeshPhysicalMaterial({
+        color: exteriorColor.clone(),
+        roughness: isDarkExterior ? 0.35 : 0.6,
+        metalness: isDarkExterior ? 0.15 : 0.0,
+        envMapIntensity: isDarkExterior ? 1.0 : 0.4,
+        clearcoat: isDarkExterior ? 0.3 : 0.05,
+        clearcoatRoughness: isDarkExterior ? 0.2 : 0.5,
+      });
+      extMat.userData = { colorRole: 'exterior' };
+
+      const intMat = new THREE.MeshPhysicalMaterial({
+        color: interiorCol.clone(),
+        roughness: 0.6,
+        metalness: 0.0,
+        envMapIntensity: 0.4,
+        clearcoat: 0.05,
+        clearcoatRoughness: 0.5,
+      });
+      intMat.userData = { colorRole: 'interior' };
+
+      const frameMats: THREE.MeshStandardMaterial[] = [extMat, intMat];
+
+      // ── Material assignment helper ──
+      // Two paths:
+      //  1. Artist-authored mesh names (Window_Exterior / Window_Interior /
+      //     Glass_* / Keeper_* / Washer_* / Between_* / Handle_* / Lock_*).
+      //     These come from the high-quality FBX delivery and have the
+      //     exterior/interior split + glazing build-up done in Maya.
+      //     We just bind the right material slot directly.
+      //  2. Generic procedural meshes — fall through to the legacy
+      //     face-normal split so older rigs (the procedural picture
+      //     window, etc.) still get exterior/interior coloured.
+      const applyFrameMaterials = (group: THREE.Group, prepFlag: string) => {
+        const flagged = (group as unknown as Record<string, unknown>)[prepFlag];
+        if (flagged) return;
+
+        group.traverse(c => {
+          const mesh = c as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          mesh.castShadow = false;
+          mesh.receiveShadow = false;
+
+          const origMats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          const firstMat = origMats[0] as THREE.MeshStandardMaterial | undefined;
+          if (!firstMat || !firstMat.color) return;
+
+          const matName = (firstMat.name || '').toLowerCase();
+          const meshName = (mesh.name || '').toLowerCase();
+
+          // ── Path 1: artist-authored mesh names ──
+          // Direct assignment, no face splitting needed.
+          if (meshName === 'window_exterior') {
+            mesh.material = extMat;
+            return;
+          }
+          if (meshName === 'window_interior') {
+            mesh.material = intMat;
+            return;
+          }
+          if (meshName.startsWith('keeper')) {
+            // Glazing bead — reads as interior trim.
+            mesh.material = intMat;
+            return;
+          }
+          if (meshName.startsWith('washer') || meshName.startsWith('between')) {
+            // Rubber seals / glazing spacers — keep their original dark
+            // material so they don't get tinted by the user's frame
+            // colour. We tag them as 'trim' so future colour updates
+            // know to skip them.
+            const trimMat = firstMat.clone();
+            trimMat.userData = { colorRole: 'trim' };
+            mesh.material = trimMat;
+            return;
+          }
+
+          // ── Path 2: generic detection (works for both authoring styles) ──
+          const isGlass = meshName.startsWith('glass')
+            || firstMat.transparent || firstMat.opacity < 0.9
+            || matName.includes('glass') || matName.includes('245');
+          if (isGlass) {
+            const glassMat = firstMat.clone();
+            glassMat.transparent = true;
+            glassMat.opacity = 0.08;
+            glassMat.color.set(0xf8f8f8);
+            glassMat.userData = { colorRole: 'glass' };
+            mesh.material = glassMat;
+            return;
+          }
+
+          const isHardware = firstMat.metalness > 0.5
+            || matName.includes('handle') || matName.includes('#290')
+            || meshName.includes('handle') || meshName.includes('lock');
+          if (isHardware) {
+            const hwMat = firstMat.clone();
+            hwMat.userData = { colorRole: 'hardware' };
+            mesh.material = hwMat;
+            return;
+          }
+
+          // Frame mesh — face-normal split (legacy path for rigs without
+          // pre-split exterior/interior meshes).
+          const geo = mesh.geometry;
+          if (!geo || !geo.index) { mesh.material = extMat; return; }
+          const normalAttr = geo.getAttribute('normal');
+          if (!normalAttr) { mesh.material = extMat; return; }
+          const indexArr = geo.index.array;
+          const triCount = indexArr.length / 3;
+          mesh.updateMatrixWorld(true);
+          const normalMatrix = new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld);
+
+          const extTris: number[] = [];
+          const intTris: number[] = [];
+          const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+          const fn = new THREE.Vector3();
+
+          for (let t = 0; t < triCount; t++) {
+            const i0 = indexArr[t * 3], i1 = indexArr[t * 3 + 1], i2 = indexArr[t * 3 + 2];
+            vA.set(normalAttr.getX(i0), normalAttr.getY(i0), normalAttr.getZ(i0));
+            vB.set(normalAttr.getX(i1), normalAttr.getY(i1), normalAttr.getZ(i1));
+            vC.set(normalAttr.getX(i2), normalAttr.getY(i2), normalAttr.getZ(i2));
+            fn.addVectors(vA, vB).add(vC).normalize().applyMatrix3(normalMatrix).normalize();
+            if (fn.z < -0.4) intTris.push(t * 3, t * 3 + 1, t * 3 + 2);
+            else extTris.push(t * 3, t * 3 + 1, t * 3 + 2);
+          }
+
+          if (intTris.length === 0) { mesh.material = extMat; return; }
+          if (extTris.length === 0) { mesh.material = intMat; return; }
+
+          const newIdx: number[] = new Array(extTris.length + intTris.length);
+          for (let i = 0; i < extTris.length; i++) newIdx[i] = indexArr[extTris[i]];
+          for (let i = 0; i < intTris.length; i++) newIdx[extTris.length + i] = indexArr[intTris[i]];
+
+          const newGeo = geo.clone();
+          newGeo.setIndex(new THREE.BufferAttribute(new Uint32Array(newIdx), 1));
+          newGeo.clearGroups();
+          newGeo.addGroup(0, extTris.length, 0);
+          newGeo.addGroup(extTris.length, intTris.length, 1);
+          mesh.geometry = newGeo;
+          mesh.material = [extMat, intMat];
+        });
+
+        (group as unknown as Record<string, unknown>)[prepFlag] = true;
+      };
+
+      const measureBounds = (group: THREE.Group): THREE.Box3 => {
+        const bx = new THREE.Box3();
+        group.updateMatrixWorld(true);
+        group.traverse(c => { if ((c as THREE.Mesh).isMesh) bx.expandByObject(c); });
+        return bx;
+      };
+
+      // picSrc may be null when the picture rig failed to load OR when
+      // the assembly has no upper rows (single row → no need to even
+      // load it). In both cases we transparently fall back to rigSrc
+      // for upper-row rendering.
+      const buildAssembly = (rigSrc: THREE.Group, picSrc: THREE.Group | null) => {
+        applyFrameMaterials(rigSrc, '__rigSrcPrepared');
+        if (picSrc) applyFrameMaterials(picSrc, '__pictureRigPrepared');
+
+        // Source bounds for sizing. Both rigged models are exported at the
+        // same native scale by the rigging scripts so a single nativeW
+        // drives the uniform clone scale.
+        const rigBox = measureBounds(rigSrc);
+        const rigSize = rigBox.getSize(new THREE.Vector3());
+        const nativeRigW = rigSize.x || 0.762;
+
+        // Pre-measure each rig's bone REST positions and mesh corner
+        // positions (in armature-local space). The casement rig was
+        // exported with its parent-stack translation baked into the bone
+        // positions but NOT into the mesh data, so the bones sit far from
+        // the mesh corners (e.g. bones at X=-2.06 but mesh corners at
+        // X=-0.38). When we move bones to the cell's target corners, we
+        // need to keep that bone-vs-corner offset intact, otherwise the
+        // mesh ends up shifted by the bone-bind offset (the "casement
+        // offset to the right" issue).
+        type BindMap = {
+          dlBind: THREE.Vector3;
+          drBind: THREE.Vector3;
+          tlBind: THREE.Vector3;
+          trBind: THREE.Vector3;
+          meshMin: THREE.Vector3;
+          meshMax: THREE.Vector3;
+        };
+        // Strip the optional Maya-style "_JT" suffix so both naming
+        // conventions (Blender procedural rigs use bare names like
+        // "Ctrl_Down_Left", the artist Maya casement uses
+        // "Ctrl_Down_Left_JT") map to the same logical corner.
+        const cleanBoneName = (n: string) => n.replace(/_JT$/, '');
+
+        // Collect IBM-derived rest-world positions per cleaned bone name.
+        // Maya rigs leave every bone's local translation at (0,0,0) and
+        // bake the bind pose into the inverseBindMatrix, so reading
+        // bone.position alone returns 0 and breaks the corner math.
+        const collectIbmBinds = (src: THREE.Group): Record<string, THREE.Vector3> => {
+          const map: Record<string, THREE.Vector3> = {};
+          src.traverse(o => {
+            const sm = o as THREE.SkinnedMesh;
+            if (!sm.isSkinnedMesh || !sm.skeleton) return;
+            const sk = sm.skeleton;
+            for (let i = 0; i < sk.bones.length; i++) {
+              const cname = cleanBoneName(sk.bones[i].name);
+              if (map[cname]) continue;
+              const inv = new THREE.Matrix4().copy(sk.boneInverses[i]).invert();
+              map[cname] = new THREE.Vector3().setFromMatrixPosition(inv);
+            }
+          });
+          return map;
+        };
+
+        // Pick the SHALLOWEST bone with a matching cleaned name. The
+        // Maya rig nests duplicate bones (one per skin) deep inside parent
+        // chains; we want the chain root so moving it sweeps every nested
+        // descendant (and therefore every skin's joint) in lockstep.
+        const findShallowestBone = (root: THREE.Object3D, cleanName: string): THREE.Bone | null => {
+          let best: THREE.Bone | null = null;
+          let bestDepth = Infinity;
+          root.traverse(o => {
+            const b = o as THREE.Bone;
+            if (!b.isBone) return;
+            if (cleanBoneName(b.name) !== cleanName) return;
+            let depth = 0;
+            let p: THREE.Object3D | null = b.parent;
+            while (p) { depth++; p = p.parent; }
+            if (depth < bestDepth) { best = b; bestDepth = depth; }
+          });
+          return best;
+        };
+
+        const measureBindMap = (src: THREE.Group): BindMap => {
+          const bind: BindMap = {
+            dlBind: new THREE.Vector3(),
+            drBind: new THREE.Vector3(),
+            tlBind: new THREE.Vector3(),
+            trBind: new THREE.Vector3(),
+            meshMin: new THREE.Vector3(Infinity, Infinity, Infinity),
+            meshMax: new THREE.Vector3(-Infinity, -Infinity, -Infinity),
+          };
+          src.updateMatrixWorld(true);
+
+          const ibmBinds = collectIbmBinds(src);
+
+          const cornerSpec: { key: keyof BindMap; clean: string }[] = [
+            { key: 'dlBind', clean: 'Ctrl_Down_Left' },
+            { key: 'drBind', clean: 'Ctrl_Down_Right' },
+            { key: 'tlBind', clean: 'Ctrl_Top_Left' },
+            { key: 'trBind', clean: 'Ctrl_Top_Right' },
+          ];
+          for (const spec of cornerSpec) {
+            const b = findShallowestBone(src, spec.clean);
+            const target = bind[spec.key] as THREE.Vector3;
+            if (b && b.position.lengthSq() > 1e-8) {
+              // Procedural Blender rigs: bone.position holds the bind pose.
+              target.copy(b.position);
+            } else if (ibmBinds[spec.clean]) {
+              // Maya rigs (Casement.glb): rest pose lives in the IBM.
+              target.copy(ibmBinds[spec.clean]);
+            }
+          }
+
+          src.traverse(o => {
+            const m = o as THREE.Mesh;
+            // CRITICAL: only count SKINNED meshes (the actual window
+            // parts bound to the rig). Blender's GLTF importer can spawn
+            // a stray "Icosphere" placeholder that isn't bound to any
+            // bone; including it would blow up the bounds to ±1 and
+            // wreck the Z alignment math below.
+            const sm = o as THREE.SkinnedMesh;
+            if (m.isMesh && m.geometry && sm.isSkinnedMesh) {
+              if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+              const bb = m.geometry.boundingBox;
+              if (bb) {
+                // Use the mesh's transform within the rig root (m.matrixWorld
+                // is in src-local space because src sits at world identity
+                // when measured) so meshes with non-identity local transforms
+                // contribute correct armature-local bounds.
+                const tbb = bb.clone().applyMatrix4(m.matrixWorld);
+                bind.meshMin.min(tbb.min);
+                bind.meshMax.max(tbb.max);
+              }
+            }
+          });
+          return bind;
+        };
+        const rigBind = measureBindMap(rigSrc);
+        const picBind = picSrc ? measureBindMap(picSrc) : null;
+
+        // Reuse the base rig's inch/meter classification computed up
+        // above (we already used it to pick UPPER_RIGGED).
+        const isInchRig = isInchBaseRig;
+
+        // Scene normalisation — matches the procedural builder so units agree
+        // with other window types in the same view.
+        const maxDimInches = Math.max(userW, userH);
+        const S = 3.0 / maxDimInches;
+        const W = userW * S;
+        const H = userH * S;
+        const cellH = H / rows;
+
+        // cloneScale converts rig-local units → scene units. The same
+        // formula handles both rig families — the only thing that varies
+        // is which frame-ratio constant we feed in:
+        //
+        //  • Inch-based rigs (Casement.glb): native rig is in inches, frame
+        //    zone ≈ 18.5% of rig width.
+        //  • Meter-based procedural rigs (*_Rigged_v2.glb): native rig is
+        //    in meters, frame zone = 12% of rig width.
+        //
+        // In both cases (frame_ratio × nativeRigW × cloneScale) ends up
+        // equal to TARGET_FRAME_INCHES × S in scene units, so the on-screen
+        // frame stays at a CONSTANT real-world thickness regardless of how
+        // big the window is — bigger windows therefore look proportionally
+        // slimmer-framed (panes.com behaviour).
+        const frameRatio = isInchRig ? INCH_RIG_FRAME_RATIO_X : NATIVE_FRAME_RATIO_X;
+        const targetFrameScene = TARGET_FRAME_INCHES * S;
+        const nativeFrameLocal = frameRatio * nativeRigW;
+        const cloneScale = nativeFrameLocal > 1e-6
+          ? targetFrameScene / nativeFrameLocal
+          : 1;
+
+        const root = new THREE.Group();
+        const baseRowIndex = rows - 1;
+
+        const setBoneXY = (bone: THREE.Bone | null, x: number, y: number) => {
+          if (!bone) return;
+          bone.position.set(x, y, bone.position.z);
+        };
+
+        // Shared helper: clone a rigged source, snap its 4 corner bones so
+        // the deformed mesh ends up exactly at the requested cell box.
+        // Each bone target = (target_corner_armature_local) + (bone_bind -
+        // mesh_corner_bind). That offset term cancels out the bind-vs-corner
+        // offset baked into the rig (large for the casement, varies for the
+        // picture). We also re-anchor the clone in Z so every rig's mesh
+        // CENTRE ends up on the same window plane (otherwise the picture
+        // rig — whose mesh data sits forward of its bones — pokes out
+        // toward the camera while the casement stays back).
+        const placeRiggedCell = (
+          src: THREE.Group,
+          bind: BindMap,
+          cellX: number,
+          rowYCenter: number,
+          cellW: number,
+          cellH: number,
+          hideHardware: boolean,
+          // Optional Z-anchor override. When supplied (typically the
+          // base rig's bind-map for a picture-rig upper row), we align
+          // this cell so its FRONT face (mesh max Z) sits on the same
+          // plane as zAnchorBind's front face — fixes the picture-rig
+          // popping forward of a casement base in multi-row stacks.
+          zAnchorBind?: BindMap,
+          // When true the placed clone is horizontally mirrored. Used
+          // for the right pane of a 2-wide casement so its handles/lock
+          // end up on the LEFT (interior side meets in the middle) —
+          // matches the panes.com schematic where adjacent casement
+          // sashes mirror each other.
+          mirrorX = false,
+        ) => {
+          const halfWLocal = cellW / cloneScale / 2;
+          const halfHLocal = cellH / cloneScale / 2;
+
+          const mn = bind.meshMin, mx = bind.meshMax;
+          const offDL = new THREE.Vector2(bind.dlBind.x - mn.x, bind.dlBind.y - mn.y);
+          const offDR = new THREE.Vector2(bind.drBind.x - mx.x, bind.drBind.y - mn.y);
+          const offTL = new THREE.Vector2(bind.tlBind.x - mn.x, bind.tlBind.y - mx.y);
+          const offTR = new THREE.Vector2(bind.trBind.x - mx.x, bind.trBind.y - mx.y);
+          // Z anchoring: by default put this rig's mesh centre on Z=0.
+          // When zAnchorBind is provided, push the clone backward so its
+          // mesh FRONT face matches zAnchorBind's FRONT face — this is
+          // how upper-row picture clones get aligned with the casement
+          // base's wall plane (fixes picture-window-pokes-forward).
+          let cloneZ: number;
+          if (zAnchorBind) {
+            const myFrontZ   = mx.z;                                          // front of this rig
+            const baseFrontZ = zAnchorBind.meshMax.z;                         // front of base rig
+            const baseCenterZ = (zAnchorBind.meshMin.z + zAnchorBind.meshMax.z) / 2;
+            const baseZWorld  = -baseCenterZ * cloneScale;                    // where base rig sits
+            cloneZ = baseZWorld + (baseFrontZ - myFrontZ) * cloneScale;
+          } else {
+            const meshCenterZ = (mn.z + mx.z) / 2;
+            cloneZ = -meshCenterZ * cloneScale;
+          }
+
+          const clone = SkeletonUtils.clone(src);
+          // Pick the SHALLOWEST bone matching each corner name (cleaned of
+          // the optional "_JT" suffix). For the deeply-nested Maya rig
+          // this is the chain root, which propagates the move to every
+          // nested duplicate that any individual skin actually binds to.
+          const dl = findShallowestBone(clone, 'Ctrl_Down_Left');
+          const dr = findShallowestBone(clone, 'Ctrl_Down_Right');
+          const tl = findShallowestBone(clone, 'Ctrl_Top_Left');
+          const tr = findShallowestBone(clone, 'Ctrl_Top_Right');
+
+          setBoneXY(dl, -halfWLocal + offDL.x, -halfHLocal + offDL.y);
+          setBoneXY(dr, +halfWLocal + offDR.x, -halfHLocal + offDR.y);
+          setBoneXY(tl, -halfWLocal + offTL.x, +halfHLocal + offTL.y);
+          setBoneXY(tr, +halfWLocal + offTR.x, +halfHLocal + offTR.y);
+
+          // Picture-window treatment for non-base rows: hide handle/lock
+          // hardware so the cell reads as a fixed window.
+          if (hideHardware) {
+            clone.traverse(o => {
+              const m = o as THREE.Mesh;
+              if (!m.isMesh) return;
+              const nm = (o.name || '').toLowerCase();
+              const mat = (Array.isArray(m.material) ? m.material[0] : m.material) as THREE.Material | undefined;
+              const matName = (mat?.name || '').toLowerCase();
+              if (nm.includes('handle') || nm.includes('lock') || nm.includes('latch')
+                  || matName.includes('handle') || matName.includes('#290')) {
+                o.visible = false;
+              }
+            });
+          }
+
+          clone.position.set(cellX, rowYCenter, cloneZ);
+          clone.scale.setScalar(cloneScale);
+          if (mirrorX) {
+            // Negative X scale flips face winding, which would render the
+            // mesh inside-out under the default FrontSide cull. Force
+            // DoubleSide on every material in this clone so both faces
+            // render. We also keep glass alpha untouched (DoubleSide on
+            // a transparent material is fine, just costs more fill rate).
+            clone.scale.x = -cloneScale;
+            clone.traverse(o => {
+              const m = o as THREE.Mesh;
+              if (!m.isMesh) return;
+              const mats = Array.isArray(m.material) ? m.material : [m.material];
+              for (const mat of mats) {
+                if (mat) (mat as THREE.Material).side = THREE.DoubleSide;
+              }
+            });
+          }
+          clone.updateMatrixWorld(true);
+          root.add(clone);
+        };
+
+        for (let r = 0; r < rows; r++) {
+          const rCols = getRowCols(r);
+          const cellW = W / rCols;
+          const rowYCenter = H / 2 - cellH / 2 - r * cellH;
+          const isBaseRow = r === baseRowIndex;
+          // Upper rows: prefer the picture rig (purpose-built fixed
+          // pane), fall back to the base rig with hardware hidden when
+          // picture failed to load. Base row always uses the base rig.
+          const usePic = !isBaseRow && picSrc !== null && picBind !== null;
+          const cellSrc = usePic ? picSrc! : rigSrc;
+          const cellBind = usePic ? picBind! : rigBind;
+          // Z-anchor the picture upper-row cells against the base rig
+          // so their front faces line up flush with the casement plane.
+          const cellZAnchor = usePic ? rigBind : undefined;
+          for (let cc = 0; cc < rCols; cc++) {
+            const cellX = -W / 2 + cellW / 2 + cc * cellW;
+            // Mirror the right pane of a 2-wide casement row so the two
+            // sashes hinge on opposite sides and their hardware/locks
+            // meet in the middle (matches the panes.com 2H casement
+            // schematic). Single-pane and 3+ pane layouts stay
+            // un-mirrored — those are typically a fixed centre flanked
+            // by a vent on each side, where both vents already point
+            // outward by symmetry.
+            const mirror = isInchBaseRig && rCols === 2 && cc === 1;
+            placeRiggedCell(cellSrc, cellBind, cellX, rowYCenter, cellW, cellH, !isBaseRow, cellZAnchor, mirror);
+          }
+        }
+
+        // The deformed/scaled cell silhouettes already span (-W/2..+W/2,
+        // -H/2..+H/2) thanks to symmetric placement, so no Box3 centring is
+        // needed (Box3.setFromObject can't see skinned-mesh deformation).
+        const deformedBounds = new THREE.Box3(
+          new THREE.Vector3(-W / 2, -H / 2, 0),
+          new THREE.Vector3(+W / 2, +H / 2, 0),
+        );
+
+        s.frameMaterials = frameMats;
+        s.currentModel = root;
+        s.scene.add(root);
+
+        const dimGroup = new THREE.Group();
+        addDimLines(root, dimGroup, deformedBounds);
+        dimGroup.renderOrder = 999;
+        s.dimGroup = dimGroup;
+        s.scene.add(dimGroup);
+
+        finalize(frameMats);
+      };
+
+      // ── Async load the rig source(s), then build ──
+      // SOURCE_RIGGED is required (load failure is fatal). UPPER_RIGGED
+      // (= the picture rig) is only loaded when the assembly actually
+      // has upper rows; its failure falls back to the base rig with
+      // hardware hidden, so we treat its load errors as non-fatal.
+      const needsUpper = rows > 1 && UPPER_RIGGED !== SOURCE_RIGGED;
+      let pending = needsUpper ? 2 : 1;
+      let baseScene: THREE.Group | null = null;
+      let upperScene: THREE.Group | null = null;
+      let baseFailed = false;
+
+      const onAllLoaded = () => {
+        if (baseFailed || !baseScene) return;
+        buildAssembly(baseScene, upperScene);
+      };
+
+      const loadOne = (path: string, optional: boolean,
+                      onScene: (g: THREE.Group) => void) => {
+        if (cacheRef.current[path]) {
+          onScene(cacheRef.current[path]);
+          pending--;
+          if (pending === 0) onAllLoaded();
+          return;
+        }
+        loader.load(
+          path,
+          (gltf) => {
+            cacheRef.current[path] = gltf.scene;
+            onScene(gltf.scene);
+            pending--;
+            if (pending === 0) onAllLoaded();
+          },
+          (xhr) => {
+            if (xhr.total && loadingTextRef.current) {
+              loadingTextRef.current.textContent = 'Loading... ' + Math.round((xhr.loaded / xhr.total) * 100) + '%';
+            }
+          },
+          (err) => {
+            if (optional) {
+              console.warn(`Optional rigged source failed (${path}), falling back:`, err);
+              pending--;
+              if (pending === 0) onAllLoaded();
+              return;
+            }
+            baseFailed = true;
+            console.error(`Rigged-window assembly load failed (${path}):`, err);
+            if (loadingTextRef.current) loadingTextRef.current.textContent = 'Error loading model';
+            setTimeout(() => {
+              if (loadingRef.current) {
+                loadingRef.current.style.opacity = '0';
+                loadingRef.current.style.pointerEvents = 'none';
+              }
+            }, 2000);
+          },
+        );
+      };
+
+      loadOne(SOURCE_RIGGED, false, (g) => { baseScene = g; });
+      if (needsUpper) {
+        loadOne(UPPER_RIGGED, true, (g) => { upperScene = g; });
+      }
+      return;
+    }
 
     /* ═══════════════════════════════════════════
        PROCEDURAL MODEL (grid-aware, high quality)
@@ -535,7 +1177,7 @@ export default function WindowViewer({
         },
         'awning': {
           base: '/windows/awning/',
-          files: ['AwningWindow.gltf'],
+          files: ['AwningWindow.glb'],
         },
         'casement': {
           base: '/windows/casement/',
@@ -825,6 +1467,26 @@ export default function WindowViewer({
             const totalSceneH = currentGrid.heightInches! * normS;
             const fixedZScale = Math.min(totalSceneW / refSize.x, totalSceneH / refSize.y);
 
+            // Types that need handle separation (hide handle, add fixed-scale one)
+            const handleSepTypes = new Set(['casement', 'awning']);
+            const needsHandleSep = handleSepTypes.has(cellType);
+
+            // If handle separation needed, extract the handle mesh from refGroup
+            let handleRefMesh: THREE.Mesh | null = null;
+            let handleLocalBox: THREE.Box3 | null = null;
+            if (needsHandleSep) {
+              refGroup.traverse(c => {
+                if (!(c as THREE.Mesh).isMesh) return;
+                const nm = (c.name || '').toLowerCase();
+                if (nm.includes('handle') || nm.includes('lock') || nm.includes('latch')) {
+                  handleRefMesh = c as THREE.Mesh;
+                }
+              });
+              if (handleRefMesh) {
+                handleLocalBox = new THREE.Box3().setFromObject(handleRefMesh!);
+              }
+            }
+
             // Place a clone in each cell of this type
             for (const cb of cells) {
               const cellGroup = refGroup.clone(true);
@@ -833,11 +1495,47 @@ export default function WindowViewer({
               const scaleX = cb.w / refSize.x;
               const scaleY = cb.h / refSize.y;
 
+              // Hide handle meshes from the scaled group (will add separately)
+              if (needsHandleSep) {
+                cellGroup.traverse(c => {
+                  if (!(c as THREE.Mesh).isMesh) return;
+                  const nm = (c.name || '').toLowerCase();
+                  if (nm.includes('handle') || nm.includes('lock') || nm.includes('latch')) {
+                    c.visible = false;
+                  }
+                });
+              }
+
               const pivot = new THREE.Group();
               pivot.add(cellGroup);
               pivot.scale.set(scaleX, scaleY, fixedZScale);
               pivot.position.set(cb.x, cb.y, 0);
               windowGroup.add(pivot);
+
+              // Add a FIXED-SCALE handle for casement/awning
+              if (needsHandleSep && handleRefMesh && handleLocalBox) {
+                const handleClone = (handleRefMesh as THREE.Mesh).clone(true);
+                // Position handle relative to this cell
+                const handleCenter = handleLocalBox.getCenter(new THREE.Vector3());
+                // Normalize handle position within model bounds [0,1]
+                const normHX = (handleCenter.x - refBox.min.x) / refSize.x;
+                const normHY = (handleCenter.y - refBox.min.y) / refSize.y;
+                // Map to cell position in scene space
+                const handleX = cb.x - cb.w / 2 + normHX * cb.w;
+                const handleY = cb.y - cb.h / 2 + normHY * cb.h;
+
+                const handlePivot = new THREE.Group();
+                handleClone.position.set(
+                  -(handleCenter.x),
+                  -(handleCenter.y),
+                  -(handleCenter.z)
+                );
+                handlePivot.add(handleClone);
+                // Use UNIFORM scale (fixedZScale) so handle keeps proportions
+                handlePivot.scale.setScalar(fixedZScale);
+                handlePivot.position.set(handleX, handleY, 0);
+                windowGroup.add(handlePivot);
+              }
 
               // ── Grills: find EXACT glass position from the placed GLTF model ──
               const matchingCell = proceduralCells.find(pc => pc.row === cb.row && pc.col === cb.col);
@@ -925,7 +1623,6 @@ export default function WindowViewer({
       }
 
 
-
       s.keyLight.castShadow = false;
       s.renderer.shadowMap.enabled = false;
       s.needsRender = true; s.dampingFrames = 30;
@@ -1007,7 +1704,7 @@ export default function WindowViewer({
       }
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [modelPath, typeId, onLoaded, gridKey, interiorColorHex]);
+  }, [modelPath, typeId, onLoaded, gridKey]);
 
   // ═══ Apply colour changes (exterior only — preserve interior) ═══
   useEffect(() => {
@@ -1052,6 +1749,42 @@ export default function WindowViewer({
 
     s.needsRender = true;
   }, [colour]);
+
+  // ═══ Apply interior colour changes ═══
+  // Mirrors the exterior effect above: patches the existing interior
+  // materials in place instead of relying on a full model rebuild
+  // (which can leave clones pointing at the previous, cached materials).
+  useEffect(() => {
+    const s = sceneRef.current;
+    if (!s || !interiorColorHex) return;
+    const c = new THREE.Color(interiorColorHex);
+
+    s.frameMaterials.forEach((m) => {
+      if (!m || !m.userData) return;
+      if (m.userData.colorRole === 'interior') {
+        m.color.copy(c);
+        m.needsUpdate = true;
+      }
+    });
+
+    if (s.currentModel) {
+      s.currentModel.traverse((child) => {
+        if (!(child as THREE.Mesh).isMesh) return;
+        const mesh = child as THREE.Mesh;
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        for (const mat of mats) {
+          const m = mat as THREE.MeshStandardMaterial;
+          if (!m || !m.userData?.colorRole) continue;
+          if (m.userData.colorRole === 'interior') {
+            m.color.copy(c);
+            m.needsUpdate = true;
+          }
+        }
+      });
+    }
+
+    s.needsRender = true;
+  }, [interiorColorHex]);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', background: '#fff' }}>

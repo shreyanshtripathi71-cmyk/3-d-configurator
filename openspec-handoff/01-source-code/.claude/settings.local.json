@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/rafi/Desktop/**)",
+      "Bash(npx create-next-app@latest \"Newkore Website\" --typescript --tailwind --eslint --app --src-dir --no-turbopack --import-alias \"@/*\")",
+      "Bash(npm --version)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:$PATH\")",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(export PATH=\"/Users/rafi/.local/node/bin:$PATH\")",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --no-turbopack --import-alias \"@/*\" --yes)",
+      "Bash(npx create-next-app@latest newkore-website --typescript --tailwind --eslint --app --src-dir --no-turbopack --import-alias \"@/*\" --yes)",
+      "Bash(cp -a /Users/rafi/Desktop/newkore-website/. \"/Users/rafi/Desktop/Newkore Website/\")",
+      "Bash(rm -rf /Users/rafi/Desktop/newkore-website)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(chmod +x \"/Users/rafi/Desktop/Newkore Website/dev.sh\")",
+      "Bash(npx next:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/)",
+      "Bash(kill 5316)",
+      "Bash(mkdir -p \"\\(main\\)\" \"\\(auth\\)/login\")",
+      "Bash(mv page.tsx \"\\(main\\)/page.tsx\")",
+      "Bash(mv login/page.tsx \"\\(auth\\)/login/page.tsx\")",
+      "Bash(rm -rf login/layout.tsx login)",
+      "WebFetch(domain:dreelio.framer.website)",
+      "Bash(curl -s -L -A \"Mozilla/5.0\" \"https://dreelio.framer.website\" -o /tmp/dreelio.html)",
+      "Read(//tmp/**)",
+      "WebFetch(domain:www.apple.com)",
+      "Bash(cp \"/Users/rafi/Desktop/windows/casement/CasementWindow.gltf\" \"/Users/rafi/Desktop/Newkore Website/public/models/casement/CasementWindow.gltf\")",
+      "Bash(cp \"/Users/rafi/Desktop/windows/casement/CasementWindow.bin\" \"/Users/rafi/Desktop/Newkore Website/public/models/casement/CasementWindow.bin\")",
+      "Bash(npm install *)",
+      "Bash(rm \"/Users/rafi/Desktop/Newkore Website/src/components/Window3D.tsx\")",
+      "Bash(rm -rf \"/Users/rafi/Desktop/Newkore Website/public/models\")",
+      "Bash(npm uninstall *)",
+      "Bash(mkdir -p \"/Users/rafi/Desktop/Newkore Website/public/models/casement\")",
+      "Bash(open -a \"Google Chrome\" \"http://localhost:3002/\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP:%{http_code}  time:%{time_total}s\\\\n\" \"http://localhost:3002/\")",
+      "Bash(curl -s -o /dev/null -w \"HTTP:%{http_code}\\\\n\" \"http://localhost:3002/\")",
+      "Bash(open -a \"Safari\" \"http://localhost:3002/\")"
+    ]
+  }
+}
